@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendrier Santé Unifié - V2.2 dynamique</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #fff; --text: #222; --muted: #666; --accent: #007bff;
+    --green: #d4f4dd; --orange: #fed7aa; --red: #fca5a5; --border: #ddd;
+    --day-height: clamp(56px,11vw,80px);
+    --bar1-size: 11px;
+    --bar2-size: 11px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+  
+  .topbar { display: flex; justify-content: center; align-items: center; padding: 16px; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .title { font-weight: bold; font-size: clamp(1.4rem,4vw,1.8rem); }
+
+  .container { 
+    max-width: 980px; margin: 20px auto; padding: 0 16px; 
+    transition: padding-left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+  }
+  .container.shifted { padding-left: 400px; }  /* ← 400px au lieu de 340 */
+
+  .calendar-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+  .calendar-title { font-weight: bold; font-size: 1.5rem; text-align: center; padding: 20px 16px 16px; background: linear-gradient(135deg, #f8f9ff 0%, #f0f2f8 100%); margin: 0; border-bottom: 1px solid #e8ecf4; }
+
+  .calendar-header { padding: 16px 20px; border-bottom: 1px solid #eee; background: #fafbfc; }
+  
+  .dynamic-bar .bar-label {
+    position: absolute; right: 6px; top: 50%;
+    transform: translateY(-50%); 
+    font-weight: 600; color: #000 !important;
+    text-shadow: 0 0 1px rgba(255,255,255,0.9);
+    z-index: 3; letter-spacing: 0.1px; white-space: nowrap;
+    line-height: 1;
+  }
+
+  .header-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* gauche | centre | droite */
+    align-items: center;
+    gap: 16px;
+    position: relative;
+  }
+  .header-row::after { content: none; }
+
+  .left-tools { display: flex; gap: 12px; align-items: center; }
+  .icon-btn { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: #f2f4f7; border: 1px solid var(--border); cursor: pointer; transition: all 0.25s; }
+  .icon-btn:hover { background: #e8f0fe; border-color: var(--accent); }
+  .icon { width: 24px; height: 24px; fill: #555; }
+  .icon.rotate { transform: rotate(-90deg); }
+
+  .ym-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .ym-year { font-size: 1.6rem; font-weight: bold; color: var(--accent); }
+  .ym-month { text-transform: uppercase; color: var(--muted); font-size: 13px; margin-top: 4px; font-weight: 500; letter-spacing: 0.5px; }
+
+  .nav { display: flex; gap: 12px; }
+  .nav-btn, .today-btn { height: 44px; min-width: 44px; border-radius: 12px; border: 1px solid var(--border); background: #f6f7fb; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .nav-btn:hover, .today-btn:hover { background: #e8f0fe; border-color: var(--accent); }
+  .today-btn { padding: 0 20px; font-size: 14px; }
+
+  .weekdays { display: grid; grid-template-columns: repeat(7,1fr); text-align: center; color: var(--muted); font-size: 13px; font-weight: 600; padding: 16px 20px 12px; background: #f8fafc; letter-spacing: 0.3px; border-bottom: 1px solid #eef2f6; }
+  
+  .days { display: grid; grid-template-columns: repeat(7,1fr); gap: 12px; padding: 24px 20px; }
+  
+  .day { height: var(--day-height); border-radius: 20px; border: 2px solid #e2e8f0; background: #fff; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .day:hover { border-color: var(--accent); box-shadow: 0 8px 25px rgba(0,123,255,0.15); transform: translateY(-2px); }
+  .day.today { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,123,255,0.15); }
+  .day.locked { border-style: dashed; opacity: 0.6; cursor: not-allowed; }
+  .day.out { opacity: 0.3; border-width: 1px; }
+  
+  .day-number { position: absolute; top: 6px; left: 10px; font-weight: 700; font-size: clamp(13px, 2.8vw, 15px); z-index: 4; background: rgba(255,255,255,0.98); padding: 2px 6px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 24px; text-align: center; }
+
+  /* Barre symptômes + médicaments */
+  .bars-container {
+    position: absolute; left: 35%; right: 0%; top: 0; bottom: 0;
+    display: flex; flex-direction: column; gap: 0; z-index: 1;
+  }
+  .bar { border-radius: 0; min-height: 0; border: none; position: relative; }
+
+  /* barres dynamiques (symptômes) réparties sur 80% de la hauteur */
+  .dynamic-bar {
+    flex: 1 1 auto;
+    border-top: 1px solid rgba(0,0,0,0.2);
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+  }
+  .dynamic-bar:first-child {
+    border-top: none;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .dynamic-bar .bar-label {
+    position: absolute; right: 6px; top: 50%;
+    transform: translateY(-50%); 
+    font-size: 11px !important;
+    font-weight: 600; color: #000 !important;
+    text-shadow: 0 0 1px rgba(255,255,255,0.9);
+    z-index: 3; letter-spacing: 0.1px; white-space: nowrap;
+    line-height: 1;
+  }
+
+/* Barre médicaments (20% bas) */
+.meds-bar {
+  flex: 0 0 20%;
+  border-top: 1px solid rgba(0,0,0,0.2);
+  background: #e5e5e5 !important;
+  border-radius: 0 0 6px 6px;
+  position: relative;  /* ← CRUCIAL pour absolute */
+}
+
+/* Conteneur pictos - À DROITE */
+.med-circles {
+  position: absolute !important;
+  right: 6px !important;    /* ← À DROITE */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: row !important;  /* ← EN LIGNE */
+  align-items: center !important;
+  gap: 1px !important;
+  flex-wrap: nowrap !important;    /* ← PAS de descente */
+}
+
+
+/* Pictos INDIVIDUELS petits */
+.med-pictos {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 1px !important;
+  display: block !important;
+}
+
+/* TES 5 PICTOS */
+.med-pictos.green-pill { background-image: url("https://cdn-icons-png.flaticon.com/128/1732/1732427.png"); }
+.med-pictos.red-pill { background-image: url("https://cdn-icons-png.flaticon.com/128/2008/2008183.png"); }
+.med-pictos.blue-pill { background-image: url("https://cdn-icons-png.flaticon.com/128/16679/16679132.png"); }
+.med-pictos.red-yellow-pill { background-image: url("https://cdn-icons-png.flaticon.com/128/12653/12653679.png"); }
+.med-pictos.purple-pill { background-image: url("https://cdn-icons-png.flaticon.com/128/1617/1617218.png"); }
+
+.block-editor-row {
+  display: flex; gap: 6px; align-items: center; 
+  margin-bottom: 10px; padding: 10px; 
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+}
+
+.block-name-input {
+  flex: 1; padding: 6px 8px; border-radius: 6px; 
+  border: 1px solid rgba(255,255,255,0.3); 
+  background: transparent; color: white; font-size: 14px;
+}
+
+.block-size-ctrl {
+  display: flex; align-items: center; gap: 2px; 
+  background: rgba(0,123,255,0.3); padding: 4px 6px; border-radius: 8px;
+}
+
+.size-btn {
+  width: 24px; height: 24px; border: none; 
+  background: rgba(255,255,255,0.3); border-radius: 4px; 
+  cursor: pointer; font-size: 12px; font-weight: bold; 
+  display: flex; align-items: center; justify-content: center;
+}
+
+.size-display {
+  color: white; font-weight: 600; font-size: 12px; 
+  min-width: 20px; text-align: center;
+}
+
+.delete-btn {
+  width: 28px; height: 28px; background: #ef4444; 
+  color: white; border: none; border-radius: 6px; 
+  cursor: pointer; font-weight: bold; font-size: 14px;
+}
+
+.note-icon { 
+  position: absolute; 
+  top: 32px;     /* ← 32px au lieu de 24px (plus bas) */
+  left: 10px; 
+  font-size: 13px; 
+  z-index: 4;
+  background: rgba(255,255,255,0.95); 
+  padding: 2px 5px;     /* ← Padding ajusté */
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+  font-weight: 500;     /* ← Plus net */
+  transition: all 0.2s; /* ← Animation douce */
+}
+
+.note-icon:hover {
+  background: rgba(0,123,255,0.1);
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+
+  .sidebar {
+    position: fixed; left: 0; top: 0; width: 380px;  /* ← 380px au lieu de 340 */
+    height: 100vh; max-width: 95vw;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    backdrop-filter: blur(20px); z-index: 200;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateX(-100%);
+    padding: 24px; overflow-y: auto;
+    box-shadow: 6px 0 40px rgba(0,0,0,0.5);  /* Ombre plus marquée */
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+
+  .sidebar-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 28px; padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-title { 
+    margin: 0; color: white; font-size: 1.4rem; font-weight: 700; 
+  }
+  .close-sidebar { 
+    width: 44px; height: 44px; background: rgba(255,0,0,0.2); 
+    border: 1px solid #ff4444; color: #ff6666;
+  }
+
+  .sidebar-btn {
+    width: 100%; padding: 16px 20px; margin: 10px 0;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px; color: #e2e8f0; font-weight: 500; font-size: 15px;
+    cursor: pointer; transition: all 0.25s; text-align: left;
+  }
+  .sidebar-btn:hover {
+    background: rgba(255,255,255,0.25); 
+    transform: translateX(6px); box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+
+  .menu-input {
+    width: 100%; padding: 14px; margin-top: 12px;
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(30,41,59,0.9); color: #fff; font-size: 15px;
+  }
+  .menu-input:focus { 
+    outline: none; border-color: var(--accent); 
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+  }
+
+  .legend-wrapper { 
+  padding: 20px 24px 24px; 
+  background: #f8fafc; 
+  border-top: 1px solid #eef2f6; 
+  text-align: center;
+}
+
+.unified-legend {
+  max-width: 500px; margin: 0 auto;
+}
+
+.legend-title {
+  font-weight: 700; color: var(--text); 
+  font-size: 15px; margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.symptoms-legend {
+  display: flex; justify-content: center; 
+  gap: 24px; margin-bottom: 16px; flex-wrap: wrap;
+}
+
+.symptoms-legend .legend-item {
+  font-size: 13px; color: var(--muted); 
+  font-weight: 500; display: flex; align-items: center; gap: 8px;
+}
+
+.meds-legend {
+  border-top: 1px solid #e2e8f0; 
+  padding-top: 12px; margin-top: 12px;
+}
+
+.meds-legend-items {
+  display: flex; flex-wrap: wrap; 
+  justify-content: center; gap: 12px;
+  font-size: 13px;
+}
+
+.meds-legend-items .legend-item {
+  display: flex; align-items: center; 
+  gap: 6px; font-weight: 500; color: var(--text);
+  padding: 4px 8px; border-radius: 8px; 
+  background: rgba(255,255,255,0.5);
+}
+
+  .blocks-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .blocks-section h3 { color: #e2e8f0; font-size: 16px; margin: 0 0 16px 0; }
+  .blocks-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .block-tag { background: rgba(0,123,255,0.3); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; }
+  .block-tag:hover { background: rgba(0,123,255,0.5); }
+
+  .legend-wrapper { 
+    padding: 20px 24px 24px; background: #f8fafc; 
+    border-top: 1px solid #eef2f6; display: flex; flex-wrap: wrap; 
+    gap: 24px; justify-content: center; align-items: flex-start;
+  }
+  .legend { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+  .color-box { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.2); }
+  .med-legend-title { font-weight: 600; color: var(--text); margin-bottom: 6px; font-size: 14px; }
+  #medsLegend .med-pictos { 
+    width: 14px !important; height: 14px !important; 
+    margin-right: 6px !important; 
+  }
+  .notes-toggle-wrapper { display: flex; justify-content: center; padding: 16px; border-top: 1px solid #eef2f6; background: #fafbfc; }
+  .notes-toggle-btn { padding: 12px 24px; font-size: 15px; font-weight: 500; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+  .since-line { margin: 20px 24px; font-size: 15px; color: var(--muted); font-weight: 500; text-align: center; padding: 16px 20px; background: #f8fafc; border-radius: 14px; border: 1px solid var(--border); }
+ .notes-list {
+  margin: 0 24px 24px;
+  padding: 20px;
+  background: fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: none;
+  font-size: 14px;
+  /* Supprimez max-height et overflow pour affichage complet */
+  /* max-height: 300px; */
+  /* overflow-y: auto; */
+  max-height: none; /* Ou une valeur plus grande comme 80vh */
+  height: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  scroll-margin-top: 100px;
+}
+
+
+.notes-list.show {
+  display: block;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+  .note-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 300; backdrop-filter: blur(8px); }
+  .note-backdrop.open { display: block; }
+  .note-modal { position: fixed; inset: 0; display: none; z-index: 310; align-items: center; justify-content: center; padding: 24px; }
+  .note-modal.open { display: flex; }
+  .note-card {
+    width: min(95vw, 580px); background: #fff; border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3); padding: 28px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .note-title { font-weight: 700; font-size: 1.6rem; margin-bottom: 20px; }
+  .note-section { margin-bottom: 24px; }
+  .note-section-label { font-size: 14px; color: #64748b; margin-bottom: 10px; font-weight: 600; }
+  .note-textarea, .note-meds-input {
+    width: 100%; min-height: 100px; border-radius: 14px;
+    border: 2px solid #e2e8f0; padding: 14px; font-size: 15px;
+    resize: vertical; background: #fff; transition: all 0.25s;
+  }
+  .note-textarea:focus, .note-meds-input:focus { 
+    outline: none; border-color: var(--accent); 
+    box-shadow: 0 0 0 4px rgba(0,123,255,0.1);
+  }
+  .note-actions { 
+    display: flex; gap: 14px; justify-content: flex-end; 
+    margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee;
+  }
+  .btn { 
+    padding: 12px 24px; border-radius: 12px; border: none; 
+    cursor: pointer; font-weight: 600; font-size: 14px; 
+    transition: all 0.25s; min-width: 130px;
+  }
+  .btn-primary { 
+    background: var(--accent); color: #fff; 
+    box-shadow: 0 6px 20px rgba(0,123,255,0.3);
+  }
+  .btn-primary:hover { background: #0056b3; transform: translateY(-2px); }
+  .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+  .btn-secondary { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+
+.recent-meds-section {
+  margin-top: 12px; padding-top: 12px; 
+  border-top: 1px solid #e2e8f0;
+}
+
+.recent-med-pill:hover {
+  background: rgba(0,123,255,0.2) !important;
+  transform: scale(1.05);
+  transition: all 0.2s;
+}
+
+
+
+  @media (max-width: 768px) {
+    .sidebar { width: 340px; }  /* ← 340px mobile */
+    .container.shifted { padding-left: 360px; }
+  }
+</style>
+
+</head>
+<body>
+  <header class="topbar">
+    <div class="title" id="calTitle">Calendrier Santé Unifié</div>
+  </header>
+
+  <main class="container">
+    <section class="calendar-card">
+      <h2 class="calendar-title" id="calendarTitle">Santé</h2>
+      
+      <div class="calendar-header">
+        <div class="header-row">
+          <div class="left-tools">
+            <button class="icon-btn" id="menuBtn">
+              <svg class="icon" id="menuIcon" viewBox="0 0 24 24">
+                <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+              </svg>
+            </button>
+            
+            <div class="sidebar" id="sidebar">
+              <div class="sidebar-header">
+                <h3 class="sidebar-title">⚙️ Paramètres</h3>
+                <button class="icon-btn close-sidebar" id="closeSidebar">
+                  <svg width="20" height="20" fill="#ff6666" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <button class="sidebar-btn" id="exportBtn">📤 Exporter JSON</button>
+              <button class="sidebar-btn" id="importBtn">📥 Importer JSON</button>
+              <input type="file" id="fileInput" accept="application/json" style="display:none;">
+              <button class="sidebar-btn" id="resetBtn">🗑️ Réinitialiser</button>
+              
+              <div style="margin-top: 24px;">
+                <div style="padding: 20px; background: rgba(255,255,255,0.06); border-radius: 16px; margin-bottom: 20px;">
+                  <label style="display: block; color: #94a3b8; font-size: 16px; font-weight: 600; margin-bottom: 16px;">
+                    ✏️ Titres
+                  </label>
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                      <label style="display: block; color: #94a3b8; font-size: 14px; margin-bottom: 6px;">Titre page :</label>
+                      <input type="text" id="titleInput" class="menu-input" placeholder="Calendrier Santé">
+                    </div>
+                    <div>
+                      <label style="display: block; color: #94a3b8; font-size: 14px; margin-bottom: 6px;">Titre calendrier :</label>
+                      <input type="text" id="calendarTitleInput" class="menu-input" placeholder="Santé">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- gestion blocs -->
+                <div style="margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.06); border-radius: 16px;">
+                  <label style="display: block; color: #94a3b8; font-size: 16px; font-weight: 600; margin-bottom: 20px;">
+                    📊 Blocs de suivi
+                  </label>
+
+                  <div id="blocksEditor"></div>
+                    <button id="addBlockBtn" class="sidebar-btn" style="background: rgba(0,123,255,0.3); border-color: rgba(0,123,255,0.5);">
+                      ➕ Ajouter un nouveau bloc
+                    </button>
+                    
+                    <button id="clearLastBlock" class="sidebar-btn" style="background: rgba(255,100,100,0.2); margin-top: 8px;">
+                      🗑️ Supprimer le dernier
+                    </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="ym-block">
+            <div class="ym-year" id="ymYear">2026</div>
+            <div class="ym-month" id="ymMonth">MARS</div>
+          </div>
+          
+          <!-- COLONNE DROITE -->
+          <div class="nav">
+            <button class="nav-btn" id="prevMonthBtn" title="Mois précédent">◀</button>
+            <button class="today-btn" id="todayBtn">Aujourd'hui</button>
+            <button class="nav-btn" id="nextMonthBtn" title="Mois suivant">▶</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="weekdays">
+        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div>
+        <div>Ven</div><div>Sam</div><div>Dim</div>
+      </div>
+      <div class="days" id="daysGrid"></div>
+
+      <div class="legend-wrapper">
+  <div class="unified-legend">
+        <div class="legend-title">Légende</div>
+        
+        <!-- Symptômes EN LIGNE -->
+        <div class="symptoms-legend">
+          <div class="legend-item"><span class="color-box" style="background: var(--green);"></span>RAS</div>
+          <div class="legend-item"><span class="color-box" style="background: var(--orange);"></span>Gêne légère</div>
+          <div class="legend-item"><span class="color-box" style="background: var(--red);"></span>Gêne importante</div>
+        </div>
+        
+        <!-- Médicaments -->
+        <div class="meds-legend">
+          <div id="medsLegend" class="meds-legend-items">
+            <em>Aucun médicament</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+      <div class="notes-toggle-wrapper">
+        <button id="toggleNotes" class="notes-toggle-btn">📝 Notes du mois</button>
+      </div>
+
+      <div class="notes-list" id="notesList"></div>
+    </section>
+  </main>
+
+  <div class="note-backdrop" id="noteBackdrop"></div>
+  <div class="note-modal" id="noteModal">
+    <div class="note-card">
+      <div class="note-title" id="noteModalTitle">Note du 2026-03-11</div>
+      <div class="note-section">
+        <div class="note-section-label">Note libre</div>
+        <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note..."></textarea>
+      </div>
+      <div class="note-section">
+      <div class="note-section-label">Médicaments (1 par ligne)</div>
+      <textarea id="noteMedsInput" class="note-meds-input" placeholder="ibuprofène 400mg&#10;triptan 50mg"></textarea>
+      
+      <!-- LISTE RÉCENTS -->
+      <div class="recent-meds-section" id="recentMedsList">
+        <small style="color: #64748b; display: block; margin: 8px 0;">Médicaments récents :</small>
+        <div id="recentMedsPills" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 60px; overflow-y: auto;"></div>
+      </div>
+    </div>
+      <div class="note-actions">
+        <button class="btn btn-danger" id="noteDeleteBtn">🗑️ Supprimer</button>
+        <button class="btn btn-secondary" id="noteCancelBtn">❌ Annuler</button>
+        <button class="btn btn-primary" id="noteSaveBtn">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const LOCK_BEFORE_ISO = '2025-10-06';
+  const DOUBLE_DELAY = 280, TAP_MAX = 350, MOVE_TOL = 10;
+
+  function toISO(date) { return date.toISOString().slice(0,10); }
+  function persist(key, obj) { localStorage.setItem(key, JSON.stringify(obj)); }
+  function loadData(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } }
+
+  let unifiedData = loadData('suiviSante.unifie.v22') || {};
+  let globalNotes = loadData('suiviSante.notes.unifie.v22') || {};
+
+  const el = {
+    title: document.getElementById('calTitle'),
+    titleInput: document.getElementById('titleInput'),
+    calendarTitle: document.getElementById('calendarTitle'),
+    calendarTitleInput: document.getElementById('calendarTitleInput'),
+    ymYear: document.getElementById('ymYear'),
+    ymMonth: document.getElementById('ymMonth'),
+    daysGrid: document.getElementById('daysGrid'),
+    sinceText: document.getElementById('sinceText'),
+    notesList: document.getElementById('notesList'),
+    toggleNotesBtn: document.getElementById('toggleNotes'),
+    prevBtn: document.getElementById('prevMonthBtn'),
+    nextBtn: document.getElementById('nextMonthBtn'),
+    todayBtn: document.getElementById('todayBtn'),
+    menuBtn: document.getElementById('menuBtn'),
+    menuIcon: document.getElementById('menuIcon'),
+    sidebar: document.getElementById('sidebar'),
+    closeSidebar: document.getElementById('closeSidebar'),
+    exportBtn: document.getElementById('exportBtn'),
+    importBtn: document.getElementById('importBtn'),
+    fileInput: document.getElementById('fileInput'),
+    resetBtn: document.getElementById('resetBtn'),
+    medsLegend: document.getElementById('medsLegend'),
+    nBlocks: document.getElementById('nBlocks'),
+    blocksList: document.getElementById('blocksList'),
+    addSleep: document.getElementById('addSleep'),
+    addMigraine: document.getElementById('addMigraine'),
+    addEnergy: document.getElementById('addEnergy'),
+    addPain: document.getElementById('addPain'),
+    addMood: document.getElementById('addMood'),
+    clearLastBlock: document.getElementById('clearLastBlock'),
+    noteModal: document.getElementById('noteModal'),
+    noteBackdrop: document.getElementById('noteBackdrop'),
+    noteModalTitle: document.getElementById('noteModalTitle'),
+    noteTextarea: document.getElementById('noteTextarea'),
+    noteMedsInput: document.getElementById('noteMedsInput'),
+    noteSaveBtn: document.getElementById('noteSaveBtn'),
+    noteCancelBtn: document.getElementById('noteCancelBtn'),
+    noteDeleteBtn: document.getElementById('noteDeleteBtn'),
+    blocksEditor: document.getElementById('blocksEditor')
+  };
+
+  const state = {
+    current: { year: new Date().getFullYear(), month: new Date().getMonth() },
+    notesVisible: false,
+    editingISO: null,
+    blocks: JSON.parse(localStorage.getItem('suiviSante.blocks.v22') || '["Sommeil","Migraine"]'),
+    blocksConfig: JSON.parse(localStorage.getItem('suiviSante.blocksConfig.v22') || '{}'),
+    
+  };
+
+  function getTodayISO() {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getBlockConfig(name) {
+    const config = state.blocksConfig[name] || { name, fontSize: 11 };
+    config.fontSize = Math.max(9, Math.min(16, parseInt(config.fontSize) || 11)); // Toujours valide
+    return config;
+  }
+
+
+  function normalizeDayData(raw) {
+    if (!raw || typeof raw !== 'object') return { blocks: {}, meds: null, note: '' };
+    if (raw.blocks) return { blocks: raw.blocks || {}, meds: raw.meds || null, note: raw.note || '' };
+    const blocks = {};
+    if (typeof raw.sleep === 'number') blocks.Sommeil = raw.sleep;
+    if (typeof raw.migraine === 'number') blocks.Migraine = raw.migraine;
+    return { blocks, meds: raw.meds || null, note: raw.note || '' };
+  }
+
+  function getMedIcon(name) {
+    const key = name.toLowerCase().replace(/[^a-z]/g,'');
+    const hash = Array.from(key).reduce((a,c) => a + c.charCodeAt(0), 0);
+    const pills = ['green-pill', 'red-pill', 'blue-pill', 'red-yellow-pill', 'purple-pill'];
+    return pills[hash % pills.length];
+  }
+
+function getMedsCircles(medsText) {
+  if (!medsText) return '';
+  const meds = medsText.split('\n').map(m => m.trim()).filter(Boolean);
+  return meds.slice(0, 5).map(med => {
+    const medName = med.split(' ')[0].toLowerCase();
+    const iconClass = getMedIcon(medName);
+    return `<span class="med-pictos ${iconClass}" title="${med}"></span>`;
+  }).join('');
+}
+
+
+  function createDynamicBars(iso, blocksData) {
+    const parts = [];
+    state.blocks.forEach(blockName => {
+      const config = getBlockConfig(blockName); // Récupère config À CHAQUE RENDER
+      const val = blocksData[blockName] ?? 0;
+      const color = ['var(--green)', 'var(--orange)', 'var(--red)'][val];
+      const fontSizePx = config.fontSize + 'px'; // Force string px
+      
+      parts.push(`
+        <div class="bar dynamic-bar" data-block="${blockName}" style="background: ${color}; flex-basis:${80/state.blocks.length}%;">
+          <span class="bar-label" style="font-size: ${fontSizePx} !important;">${config.name}</span>
+        </div>
+      `);
+    });
+    return parts.join('');
+  }
+
+
+  function createDayCell(iso, rawData, isToday) {
+    const { blocks, meds, note } = normalizeDayData(rawData);
+    const cell = document.createElement('div');
+    cell.className = 'day' + (isToday ? ' today' : '');
+    if (!isToday && (iso > getTodayISO() || iso < LOCK_BEFORE_ISO)) {
+      cell.classList.add('locked');
+    }
+    const medsHtml = getMedsCircles(meds?.txt);
+    const noteIcon = note || globalNotes[iso] ? '<div class="note-icon">✎</div>' : '';
+
+    cell.innerHTML = `
+      <div class="day-number">${iso.slice(8,10)}</div>
+      <div class="bars-container">
+        ${createDynamicBars(iso, blocks)}
+        <div class="bar meds-bar">
+          <span class="med-circles">${medsHtml}</span>  <!-- ← SPAN avec classe med-circles -->
+        </div>
+      </div>
+      ${noteIcon}
+    `;
+
+    if (!cell.classList.contains('locked')) {
+      cell.querySelectorAll('.dynamic-bar').forEach(bar => {
+        const blockName = bar.dataset.block;
+        setupBarInteraction(bar, iso, blockName);
+      });
+      cell.addEventListener('dblclick', () => openNoteModal(iso));
+    }
+    return cell;
+  }
+
+  function setupBarInteraction(bar, iso, blockName) {
+    let lastTapTime = 0, startX, startY, startTime, singleTimer;
+    const handle = (e) => {
+      if (e.type === 'pointerdown') {
+        startTime = Date.now(); startX = e.clientX; startY = e.clientY;
+      } else {
+        const now = Date.now();
+        if (now - startTime > TAP_MAX || Math.hypot(e.clientX - startX, e.clientY - startY) > MOVE_TOL) return;
+        if (now - lastTapTime < DOUBLE_DELAY) {
+          if (singleTimer) clearTimeout(singleTimer);
+          openNoteModal(iso);
+          lastTapTime = 0;
+        } else {
+          lastTapTime = now;
+          singleTimer = setTimeout(() => {
+            cycleBlockState(iso, blockName);
+            renderCalendar(state.current.year, state.current.month);
+            
+          }, DOUBLE_DELAY);
+        }
+      }
+    };
+    bar.addEventListener('pointerdown', handle);
+    bar.addEventListener('pointerup', handle);
+  }
+
+  function cycleBlockState(iso, blockName) {
+    const raw = unifiedData[iso] || {};
+    const day = normalizeDayData(raw);
+    const current = day.blocks[blockName] ?? 0;
+    day.blocks[blockName] = (current + 1) % 3;
+    unifiedData[iso] = day;
+    persist('suiviSante.unifie.v22', unifiedData);
+  }
+
+  function renderCalendar(year, month) {
+    const grid = el.daysGrid; grid.innerHTML = '';
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    const lastDay = new Date(Date.UTC(year, month + 1, 0));
+    const daysInMonth = lastDay.getUTCDate();
+    
+    el.ymYear.textContent = year;
+    el.ymMonth.textContent = firstDay.toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
+
+    const startWeekday = (firstDay.getUTCDay() + 6) % 7;
+    const todayISO = getTodayISO();
+
+    for (let i = 0; i < startWeekday; i++) {
+      const div = document.createElement('div'); div.className = 'day out'; grid.appendChild(div);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = toISO(new Date(Date.UTC(year, month, d)));
+      const dayData = unifiedData[iso] || {};
+      grid.appendChild(createDayCell(iso, dayData, iso === todayISO));
+    }
+    renderMedsLegend();
+   
+    if (state.notesVisible) renderMonthNotes();
+  }
+
+  function renderMedsLegend() {
+    if (!el.medsLegend) return;
+    const allMeds = new Map();
+    Object.values(unifiedData).forEach(raw => {
+      const day = normalizeDayData(raw);
+      if (day.meds?.txt) {
+        day.meds.txt.split('\n').forEach(line => {
+          const medName = line.split(' ')[0].toLowerCase();
+          allMeds.set(medName, line.split(' ')[0]);
+        });
+      }
+    });
+    
+    el.medsLegend.innerHTML = allMeds.size 
+      ? Array.from(allMeds.values()).slice(0, 8).map(name => {
+          const iconClass = getMedIcon(name);
+          return `<div class="legend-item">
+            <span class="med-pictos ${iconClass}" style="width: 16px; height: 16px;"></span>
+            ${name}
+          </div>`;
+        }).join('')
+      : '<em>Aucun médicament</em>';
+  }
+
+
+
+  function updateSince() {
+    const todayISO = getTodayISO();
+    state.stats = { blocks: {} };
+    
+    state.blocks.forEach(blockName => {
+      const s = state.stats.blocks[blockName] = { lastNonGreen: null, lastRed: null };
+      const sortedDays = Object.keys(unifiedData)
+        .filter(iso => iso <= todayISO).sort((a,b) => b.localeCompare(a));
+      
+      for (const iso of sortedDays) {
+        const day = normalizeDayData(unifiedData[iso]);
+        const val = day.blocks[blockName] ?? 0;
+        if (!s.lastNonGreen && val !== 0) s.lastNonGreen = iso;
+        if (!s.lastRed && val === 2) s.lastRed = iso;
+      }
+    });
+
+    const text = state.blocks.map(blockName => {
+      const s = state.stats.blocks[blockName];
+      if (!s) return '';
+      const config = getBlockConfig(blockName);
+      if (s.lastRed) {
+        const days = Math.ceil((new Date(todayISO + 'T00:00:00') - new Date(s.lastRed + 'T00:00:00')) / (1000*60*60*24));
+        return `🚨 ${config.name} forte: ${days}j`;
+      } else if (s.lastNonGreen) {
+        const days = Math.ceil((new Date(todayISO + 'T00:00:00') - new Date(s.lastNonGreen + 'T00:00:00')) / (1000*60*60*24));
+        return `⚠️ ${config.name}: ${days}j`;
+      }
+      return `✅ ${config.name} OK`;
+    }).filter(Boolean).join(' | ') || 'N/A';
+
+  }
+
+  function renderRecentMeds() {
+  const allMeds = new Map();
+  Object.values(unifiedData).forEach(raw => {
+    const day = normalizeDayData(raw);
+    if (day.meds?.txt) {
+      day.meds.txt.split('\n').forEach(line => {
+        const medName = line.split(' ')[0].toLowerCase();
+        allMeds.set(medName, line);
+      });
+    }
+  });
+  
+  const recentMedsPills = document.getElementById('recentMedsPills');
+  if (!recentMedsPills) return;
+  
+  recentMedsPills.innerHTML = Array.from(allMeds.values()).slice(0, 12).map(med => {
+    const medName = med.split(' ')[0];
+    const iconClass = getMedIcon(medName);
+    return `
+      <div class="recent-med-pill" onclick="addMedToInput('${med.replace(/'/g, "\\'")}')" 
+           title="Cliquez pour ajouter" style="cursor: pointer; display: flex; align-items: center; gap: 4px; 
+           padding: 4px 8px; background: rgba(0,123,255,0.1); border-radius: 12px; font-size: 13px; 
+           border: 1px solid rgba(0,123,255,0.3); white-space: nowrap;">
+        <span class="med-pictos ${iconClass}" style="width: 12px; height: 12px;"></span>
+        ${medName}
+      </div>
+    `;
+  }).join('') || '<small style="color: #94a3b8;">Aucun médicament récent</small>';
+}
+
+
+
+function openNoteModal(iso) {
+  state.editingISO = iso;
+  const dayData = normalizeDayData(unifiedData[iso]);
+  el.noteModalTitle.textContent = `Note du ${formatDate(iso)}`;
+  el.noteTextarea.value = dayData.note || globalNotes[iso] || '';
+  el.noteMedsInput.value = dayData.meds?.txt || '';
+  
+  el.noteModal.classList.add('open');
+  el.noteBackdrop.classList.add('open');
+  
+  // RENDRE LISTE
+  setTimeout(renderRecentMeds, 100);  // ← Après ouverture
+}
+
+
+  function closeNoteModal() {
+    el.noteModal.classList.remove('open');
+    el.noteBackdrop.classList.remove('open');
+    state.editingISO = null;
+  }
+
+  function saveNote() {
+    if (!state.editingISO) return;
+    const note = el.noteTextarea.value.trim();
+    const medsTxt = el.noteMedsInput.value.trim();
+    
+    const dayData = normalizeDayData(unifiedData[state.editingISO]);
+    dayData.note = note;
+    if (medsTxt) {
+      dayData.meds = { txt: medsTxt };
+    } else {
+      delete dayData.meds;
+    }
+    
+    unifiedData[state.editingISO] = dayData;
+    if (note) globalNotes[state.editingISO] = note;
+    else delete globalNotes[state.editingISO];
+    
+    persist('suiviSante.unifie.v22', unifiedData);
+    persist('suiviSante.notes.unifie.v22', globalNotes);
+    closeNoteModal();
+    renderCalendar(state.current.year, state.current.month);
+  }
+
+  function formatDate(iso) {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { 
+      day: 'numeric', month: 'short', year: 'numeric' 
+    });
+  }
+
+function renderMonthNotes() {
+  el.notesList.innerHTML = Object.entries(globalNotes)
+    .filter(([iso]) => iso.startsWith(
+      state.current.year + '-' + String(state.current.month + 1).padStart(2, '0')
+    ))
+    .sort(([a], [b]) => b.localeCompare(a))  // ← Plus récent en haut
+    .map(([iso, note]) => 
+      `<div style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer;"
+           onclick="openNoteModal('${iso}')">
+        <strong>${formatDate(iso)}</strong>: ${note.slice(0, 600)}${note.length > 600 ? '...' : ''}
+      </div>`
+    ).join('') || '<em style="color: #94a3b8; text-align: center;">Aucune note ce mois</em>';
+}
+
+
+  function handleBlockNameInput(name, newName) {
+  // Met à jour en temps réel SANS stopPropagation qui bloque la saisie
+  if (state.blocksConfig[name]) {
+    state.blocksConfig[name].name = newName;
+    persistBlocks();
+  }
+}
+
+// Expose globalement
+window.handleBlockNameInput = handleBlockNameInput;
+
+function renderBlocksEditor() {
+  if (!el.blocksEditor) return;
+  
+  const html = `
+    <div class="blocks-active">
+      <h3 style="color: #e2e8f0; margin: 0 0 16px 0;">Blocs actifs (${state.blocks.length})</h3>
+      ${state.blocks.map(name => {
+        const config = getBlockConfig(name);
+        const size = config.fontSize;
+        return `
+          <div class="block-editor-row" data-block="${name}">
+            <input class="block-name-input" value="${config.name}" placeholder="Nom du bloc">
+            <div class="block-size-ctrl">
+              <button class="size-btn" data-action="dec" data-block="${name}">−</button>
+              <span class="size-display">${size}</span>
+              <button class="size-btn" data-action="inc" data-block="${name}">+</button>
+            </div>
+            <button class="delete-btn" data-block="${name}">×</button>
+          </div>
+        `;
+      }).join('') || '<p style="color: #94a3b8; text-align: center; font-style: italic;">Aucun bloc actif</p>'}
+    </div>
+  `;
+  
+  el.blocksEditor.innerHTML = html;
+  setupBlockEditors();
+}
+
+
+
+
+function setupBlockEditors() {
+  // Inputs noms - onblur + ENTRÉE
+  el.blocksEditor.querySelectorAll('.block-name-input').forEach(input => {
+    // SUR SORTIE
+    input.onblur = () => {
+      const row = input.closest('.block-editor-row');
+      const name = row.dataset.block;
+      const newName = input.value.trim();
+      if (newName && newName !== getBlockConfig(name).name) {
+        window.updateBlockName(name, newName);
+      }
+    };
+    
+    // SUR ENTRÉE → déclenche onblur
+    input.onkeypress = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();  // ← Force validation
+      }
+    };
+  });
+  
+  // Boutons +/- et delete (inchangés)
+  el.blocksEditor.querySelectorAll('.size-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const name = btn.dataset.block;
+      const action = btn.dataset.action;
+      const currentSize = parseInt(getBlockConfig(name).fontSize);
+      const newSize = action === 'inc' ? currentSize + 1 : currentSize - 1;
+      window.updateBlockFontSize(name, newSize);
+    };
+  });
+  
+  el.blocksEditor.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const name = btn.dataset.block;
+      if (confirm(`Supprimer "${getBlockConfig(name).name}" ?`)) {
+        window.removeBlock(name);
+      }
+    };
+  });
+}
+
+
+
+
+
+function persistBlocks() {
+  localStorage.setItem('suiviSante.blocks.v22', JSON.stringify(state.blocks));
+  localStorage.setItem('suiviSante.blocksConfig.v22', JSON.stringify(state.blocksConfig));
+  
+  // FORCE refresh TOUT
+  renderBlocksEditor();
+  renderCalendar(state.current.year, state.current.month);
+  updateSince();
+}
+
+
+
+  function updateBlockName(name, newName) {
+    state.blocksConfig[name].name = newName;
+    persistBlocks();
+  }
+
+  window.updateBlockFontSize = function(name, size) {
+    size = Math.max(9, Math.min(16, parseInt(size))); // Limite 9-16px
+    state.blocksConfig[name].fontSize = size;
+    persistBlocks();
+  };
+
+
+  function addBlock(name) {
+    if (name && !state.blocks.includes(name)) {
+      state.blocks.push(name);
+      state.blocksConfig[name] = { name, fontSize: 11 };
+      persistBlocks();
+    }
+  }
+
+  function removeBlock(name) {
+    state.blocks = state.blocks.filter(b => b !== name);
+    delete state.blocksConfig[name];
+    persistBlocks();
+  }
+
+  function exportData() {
+    const data = {
+      unified: unifiedData,
+      notes: globalNotes,
+      blocks: state.blocks,
+      blocksConfig: state.blocksConfig
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `sante-${state.current.year}-${String(state.current.month+1).padStart(2,'0')}.json`;
+    a.click();
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        unifiedData = data.unified || {};
+        globalNotes = data.notes || {};
+        state.blocks = data.blocks || state.blocks;
+        state.blocksConfig = data.blocksConfig || state.blocksConfig;
+        persist('suiviSante.unifie.v22', unifiedData);
+        persist('suiviSante.notes.unifie.v22', globalNotes);
+        persistBlocks();
+        renderCalendar(state.current.year, state.current.month);
+        alert('Import réussi !');
+      } catch(err) {
+        alert('Erreur d\'import');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function resetData() {
+    if (confirm('Vraiment réinitialiser tout ?')) {
+      localStorage.clear();
+      location.reload();
+    }
+  }
+
+  // Événements
+  function bindEvents() {
+    if (el.titleInput) {
+    el.titleInput.onblur = (e) => {  // ← onblur pour valider
+      el.title.textContent = e.target.value || 'Calendrier Santé Unifié';
+      persistTitles();
+    };
+  }
+  if (el.calendarTitleInput) {
+    el.calendarTitleInput.onblur = (e) => {
+      el.calendarTitle.textContent = e.target.value || 'Santé';
+      persistTitles();
+    };
+  }
+    if (el.prevBtn) el.prevBtn.onclick = () => { 
+      state.current.month--; 
+      if (state.current.month < 0) { state.current.month = 11; state.current.year--; } 
+      renderCalendar(state.current.year, state.current.month); 
+    };
+    
+    if (el.nextBtn) el.nextBtn.onclick = () => { 
+      state.current.month++; 
+      if (state.current.month > 11) { state.current.month = 0; state.current.year++; } 
+      renderCalendar(state.current.year, state.current.month); 
+    };
+    if (document.getElementById('addBlockBtn')) {
+  document.getElementById('addBlockBtn').onclick = () => {
+    const newName = prompt('Nom du nouveau bloc :');
+    if (newName && newName.trim()) {
+      const cleanName = newName.trim();
+      if (!state.blocks.includes(cleanName)) {
+        state.blocks.push(cleanName);
+        state.blocksConfig[cleanName] = { name: cleanName, fontSize: 11 };
+        
+        // FORCE refresh immédiat
+        persistBlocks();
+        renderCalendar(state.current.year, state.current.month);  // ← Recrée jours
+      } else {
+        alert('Bloc déjà existant !');
+      }
+    }
+  };
+}
+    if (el.todayBtn) el.todayBtn.onclick = () => { 
+      state.current.year = new Date().getFullYear(); 
+      state.current.month = new Date().getMonth(); 
+      renderCalendar(state.current.year, state.current.month); 
+    };
+    
+    if (el.menuBtn) el.menuBtn.onclick = () => el.sidebar.classList.toggle('open');
+    if (el.closeSidebar) el.closeSidebar.onclick = () => el.sidebar.classList.remove('open');
+if (el.toggleNotesBtn) {
+  el.toggleNotesBtn.onclick = () => {
+    state.notesVisible = !state.notesVisible;
+    el.notesList.style.display = state.notesVisible ? 'block' : 'none';
+    el.notesList.classList.toggle('show', state.notesVisible);
+    
+    if (state.notesVisible) {
+      renderMonthNotes();
+      // SCROLL AUTOMATIQUE vers notes
+      el.notesList.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start', 
+        inline: 'nearest' 
+      });
+    }
+  };
+}
+
+    
+    if (el.noteDeleteBtn) el.noteDeleteBtn.onclick = deleteNote;
+
+    if (el.exportBtn) el.exportBtn.onclick = exportData;
+    if (el.importBtn) el.importBtn.onclick = () => el.fileInput.click();
+    if (el.fileInput) el.fileInput.onchange = (e) => importData(e.target.files[0]);
+    if (el.resetBtn) el.resetBtn.onclick = resetData;
+    
+    if (el.noteSaveBtn) el.noteSaveBtn.onclick = saveNote;
+    if (el.noteCancelBtn) el.noteCancelBtn.onclick = closeNoteModal;
+    if (el.noteBackdrop) el.noteBackdrop.onclick = closeNoteModal;
+    
+    if (el.clearLastBlock) el.clearLastBlock.onclick = () => {
+      const last = state.blocks.pop();
+      if (last) {
+        delete state.blocksConfig[last];
+        persistBlocks();
+      }
+    };
+
+    // titres
+    if (el.titleInput) el.titleInput.onchange = (e) => el.title.textContent = e.target.value || 'Calendrier Santé Unifié';
+    if (el.calendarTitleInput) el.calendarTitleInput.onchange = (e) => el.calendarTitle.textContent = e.target.value || 'Santé';
+    if (el.menuBtn) {
+      el.menuBtn.onclick = (e) => {
+        e.stopPropagation(); // Empêche le clic dehors
+        el.sidebar.classList.toggle('open');
+        document.body.classList.toggle('sidebar-open');
+      };
+    }
+  } 
+
+  // FONCTIONS GLOBALES pour les inputs dynamiques
+window.updateBlockName = function(name, newName) {
+  state.blocksConfig[name].name = newName;
+  persistBlocks();
+};
+
+window.updateBlockFontSize = function(name, size) {
+  size = Math.max(9, Math.min(16, parseInt(size))); // Limite 9-16px
+  state.blocksConfig[name].fontSize = size;
+  persistBlocks();
+};
+
+window.removeBlock = function(name) {
+  state.blocks = state.blocks.filter(b => b !== name);
+  delete state.blocksConfig[name];
+  persistBlocks();
+};
+
+window.addBlock = function(name) {
+  if (name && !state.blocks.includes(name)) {
+    state.blocks.push(name);
+    state.blocksConfig[name] = { name, fontSize: 11 };
+    persistBlocks();
+  }
+};
+
+window.addMedToInput = function(med) {
+  const textarea = document.getElementById('noteMedsInput');
+  const current = textarea.value.trim();
+  const newLine = current ? `\n${med}` : med;
+  textarea.value = current + newLine;
+  textarea.focus();
+  textarea.scrollTop = textarea.scrollHeight;  // Scroll auto
+};
+
+  function setupEscKey() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.sidebar.classList.contains('open')) {
+        el.sidebar.classList.remove('open');
+        document.body.classList.remove('sidebar-open');
+        // Optionnel : remet focus sur menuBtn pour accessibilité
+        el.menuBtn.focus();
+      }
+    });
+  }
+
+  function deleteNote() {
+  if (!state.editingISO || !confirm('Supprimer définitivement cette note ?')) return;
+  
+  // Supprime données jour
+  delete unifiedData[state.editingISO];
+  delete globalNotes[state.editingISO];
+  
+  // Sauvegarde
+  persist('suiviSante.unifie.v22', unifiedData);
+  persist('suiviSante.notes.unifie.v22', globalNotes);
+  
+  closeNoteModal();
+  renderCalendar(state.current.year, state.current.month);
+  updateSince();
+}
+
+function persistTitles() {
+  localStorage.setItem('suiviSante.title.v22', el.title.textContent);
+  localStorage.setItem('suiviSante.calendarTitle.v22', el.calendarTitle.textContent);
+}
+
+function loadTitles() {
+  const savedTitle = localStorage.getItem('suiviSante.title.v22');
+  const savedCalTitle = localStorage.getItem('suiviSante.calendarTitle.v22');
+  
+  if (savedTitle && el.title) {
+    el.title.textContent = savedTitle;
+    if (el.titleInput) el.titleInput.value = savedTitle;
+  }
+  if (savedCalTitle && el.calendarTitle) {
+    el.calendarTitle.textContent = savedCalTitle;
+    if (el.calendarTitleInput) el.calendarTitleInput.value = savedCalTitle;
+  }
+}
+
+
+
+  // INIT
+  function init() {
+  // 1. CHARGEMENT TITRES EN PREMIER
+  loadTitles();
+  
+  // 2. Autres données
+  unifiedData = loadData('suiviSante.unifie.v22') || {};
+  globalNotes = loadData('suiviSante.notes.unifie.v22') || {};
+  state.blocks = JSON.parse(localStorage.getItem('suiviSante.blocks.v22') || '["Sommeil","Migraine"]');
+  state.blocksConfig = JSON.parse(localStorage.getItem('suiviSante.blocksConfig.v22') || '{}');
+  
+  persistBlocks();
+  setupSidebarOutsideClick();
+  setupEscKey();
+  bindEvents();
+  renderCalendar(state.current.year, state.current.month);
+    
+    setInterval(updateSince, 24*60*60*1000);
+    window.addEventListener('resize', () => renderCalendar(state.current.year, state.current.month));
+  }
+
+  function setupSidebarOutsideClick() {
+    const handleClickOutside = (e) => {
+      if (el.sidebar.classList.contains('open') && 
+          !el.sidebar.contains(e.target) && 
+          !el.menuBtn.contains(e.target)) {
+        el.sidebar.classList.remove('open');
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+  }
+
+
+
+  // Attendre que le DOM soit prêt
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>
