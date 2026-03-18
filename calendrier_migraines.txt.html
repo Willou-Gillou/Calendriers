@@ -6,189 +6,125 @@
 <title>Mes Calendriers</title>
 <style>
   :root {
-    --bg: #f4f6fa; --text: #222; --muted: #666; --accent: #007bff;
-    --green: #28c76f; --orange: #ff7f00; --red: #d60000;
-    --border: #ddd; --day-size: clamp(38px,8vw,64px); --day-radius: 14px; --day-font: clamp(16px,4vw,22px);
+    --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
+    --green:#28c76f;--orange:#ff7f00;--red:#d60000;
+    --border:#ddd;--day-size:clamp(38px,8vw,64px);--day-radius:14px;--day-font:clamp(14px,3.5vw,20px);
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);}
 
   /* TOPBAR */
-  .topbar {
-    display: flex; align-items: center;
-    padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10; gap: 12px;
-  }
-  .menu-toggle-btn {
-    width: 44px; height: 44px; display: grid; place-items: center;
-    border-radius: 10px; background: #f2f4f7; border: 1px solid var(--border);
-    cursor: pointer; flex-shrink: 0;
-  }
-  .menu-toggle-btn svg { width: 22px; height: 22px; fill: #333; }
-  .global-nav { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
-  .nav-btn, .today-btn {
-    height: 42px; min-width: 42px; border-radius: 10px;
-    border: 1px solid var(--border); background: #f6f7fb; cursor: pointer; font-size: 15px;
-  }
-  .today-btn { padding: 0 14px; background: #fff; white-space: nowrap; }
-  .ym-global { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
-  .ym-global-year  { font-size: 17px; font-weight: bold; line-height: 1.1; }
-  .ym-global-month { text-transform: uppercase; color: var(--muted); font-size: 12px; margin-top: 1px; }
-  @media (max-width: 480px) {
-    .nav-btn, .today-btn { height: 36px; min-width: 36px; font-size: 13px; }
-    .today-btn { padding: 0 10px; }
-    .ym-global-year { font-size: 15px; } .ym-global-month { font-size: 11px; }
-  }
+  .topbar{display:flex;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;gap:12px;}
+  .menu-toggle-btn{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:#f2f4f7;border:1px solid var(--border);cursor:pointer;flex-shrink:0;}
+  .menu-toggle-btn svg{width:22px;height:22px;fill:#333;}
+  .global-nav{display:flex;align-items:center;gap:8px;flex:1;justify-content:center;}
+  .nav-btn,.today-btn{height:42px;min-width:42px;border-radius:10px;border:1px solid var(--border);background:#f6f7fb;cursor:pointer;font-size:15px;}
+  .today-btn{padding:0 14px;background:#fff;white-space:nowrap;}
+  .ym-global{display:flex;flex-direction:column;align-items:center;min-width:110px;}
+  .ym-global-year{font-size:17px;font-weight:bold;line-height:1.1;}
+  .ym-global-month{text-transform:uppercase;color:var(--muted);font-size:12px;margin-top:1px;}
+  @media(max-width:480px){.nav-btn,.today-btn{height:36px;min-width:36px;font-size:13px;}.today-btn{padding:0 10px;}.ym-global-year{font-size:15px;}.ym-global-month{font-size:11px;}}
 
-  .container { max-width: 980px; margin: 20px auto; padding: 0 16px; }
+  .container{max-width:980px;margin:20px auto;padding:0 16px;}
 
-  /* CARDS */
-  .calendar-card {
-    background: #fff; border: 1px solid var(--border); border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 22px; position: relative;
-  }
-  .delete-cal-btn {
-    position: absolute; top: 10px; right: 10px;
-    width: 26px; height: 26px; border-radius: 50%;
-    background: #fff0f0; border: 1px solid #ffd2d2; color: #c00;
-    font-size: 14px; cursor: pointer; display: grid; place-items: center;
-    z-index: 2; line-height: 1;
-  }
-  .delete-cal-btn:hover { background: #ffd2d2; }
-  .calendar-header { padding: 12px 42px 12px 16px; border-bottom: 1px solid #eee; }
-  .calendar-title { font-weight: bold; font-size: 18px; margin: 0; }
-  .weekdays {
-    display: grid; grid-template-columns: repeat(7,1fr);
-    text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px; padding: 0 16px;
-  }
-  .days { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; padding: 16px; }
-  .day {
-    height: var(--day-size); border-radius: var(--day-radius); border: 1px solid #ccc;
-    background: #fafafa; display: flex; align-items: center; justify-content: center;
-    font-size: var(--day-font); font-weight: bold; cursor: pointer; position: relative;
-    touch-action: manipulation; -webkit-tap-highlight-color: rgba(0,0,0,0); user-select: none;
-  }
-  .day.today { border: 2px solid var(--accent); }
-  .state-0 { background: #e9f9ef; }
-  .state-1 { background: #ffe0b3; }
-  .state-2 { background: #ffcccc; }
-  .day.locked { background: #fff!important; color: #aaa; border-style: dashed; cursor: not-allowed; }
-  .day.out { opacity: .4; }
-  .note-icon { position: absolute; top: 2px; right: 2px; font-size: 10px; }
+  /* CARD */
+  .calendar-card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin-bottom:22px;position:relative;}
+  .delete-cal-btn{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:#fff0f0;border:1px solid #ffd2d2;color:#c00;font-size:14px;cursor:pointer;display:grid;place-items:center;z-index:2;}
+  .delete-cal-btn:hover{background:#ffd2d2;}
+  .calendar-header{padding:12px 42px 12px 16px;border-bottom:1px solid #eee;}
+  .calendar-title{font-weight:bold;font-size:18px;margin:0;}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-size:13px;margin-top:8px;padding:0 16px;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:12px;}
 
-  .since-line { margin: 14px 16px; font-size: 14px; }
-  .legend {
-    font-size: 12px; color: var(--muted); margin: 8px 6px 6px;
-    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  /* CELLULE JOUR */
+  .day{
+    height:var(--day-size);border-radius:var(--day-radius);border:1px solid #ccc;
+    background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:var(--day-font);font-weight:bold;cursor:pointer;position:relative;
+    touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0);user-select:none;
+    gap:1px;overflow:hidden;
   }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .color-box { width: 14px; height: 14px; display: inline-block; border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; }
-  .notes-toggle-wrapper { display: flex; justify-content: center; margin: 10px 0 6px; }
-  .notes-toggle-btn {
-    padding: 10px 16px; font-size: 14px; border-radius: 10px; border: 1px solid var(--border);
-    background: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
-  .notes-toggle-btn:hover { background: #f6f7fb; }
-  .notes-list {
-    margin: 14px 16px 20px; padding: 10px; background: #fff;
-    border: 1px solid var(--border); border-radius: 10px; display: none; font-size: 12px;
-  }
+  .day.today{border:2px solid var(--accent);}
+  .state-0{background:#e9f9ef;} .state-1{background:#ffe0b3;} .state-2{background:#ffcccc;}
+  .day.locked{background:#fff!important;color:#aaa;border-style:dashed;cursor:not-allowed;}
+  .day.out{opacity:.4;}
+  .day-num{line-height:1;}
+  .day-meds{font-size:11px;line-height:1;letter-spacing:1px;max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap;}
+  .note-dot{position:absolute;top:3px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+  .since-line{margin:10px 16px;font-size:13px;}
+  .legend{font-size:12px;color:var(--muted);margin:6px 8px 4px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .legend-item{display:flex;align-items:center;gap:5px;}
+  .color-box{width:13px;height:13px;display:inline-block;border:1px solid rgba(0,0,0,0.1);border-radius:2px;}
+  .legend-meds{font-size:12px;color:var(--muted);margin:2px 8px 8px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .legend-med-item{display:flex;align-items:center;gap:4px;}
+
+  .notes-toggle-wrapper{display:flex;justify-content:center;margin:8px 0 4px;}
+  .notes-toggle-btn{padding:8px 14px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+  .notes-list{margin:10px 16px 18px;padding:10px;background:#fff;border:1px solid var(--border);border-radius:10px;display:none;font-size:12px;}
 
   /* DRAWER */
-  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 30; display: none; }
-  .drawer-overlay.open { display: block; }
-  .drawer {
-    position: fixed; top: 0; left: 0; height: 100%; width: min(320px, 88vw);
-    background: #1e1e2e; color: #fff; z-index: 35;
-    transform: translateX(-100%); transition: transform 0.28s ease;
-    display: flex; flex-direction: column;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.3); overflow: hidden;
-  }
-  .drawer.open { transform: translateX(0); }
-  .drawer-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
-  }
-  .drawer-header-title { font-weight: bold; font-size: 16px; }
-  .drawer-close-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
-  .drawer-body {
-    flex: 1 1 auto; overflow-y: auto; padding: 16px;
-    display: flex; flex-direction: column; gap: 12px;
-    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
-  }
-  .drawer-body::-webkit-scrollbar { width: 4px; }
-  .drawer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-  .drawer-section-title {
-    font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.4);
-    letter-spacing: 0.08em; margin-top: 4px; flex-shrink: 0;
-  }
-  .drawer-btn {
-    width: 100%; padding: 12px 14px; background: #2d2d44;
-    border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
-    color: #fff; cursor: pointer; text-align: left; font-size: 14px;
-    transition: background 0.15s; flex-shrink: 0;
-  }
-  .drawer-btn:hover { background: #3a3a58; }
-  .drawer-btn.danger { background: #3d1a1a; border-color: rgba(255,80,80,0.3); color: #ff8080; }
-  .drawer-btn.danger:hover { background: #5a2020; }
-  .drawer-label { font-size: 12px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
-  .drawer-input {
-    width: 100%; padding: 10px 12px; border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.2); background: #12121e;
-    color: #fff; font-size: 14px; flex-shrink: 0; min-width: 0;
-  }
-  .drawer-input::placeholder { color: rgba(255,255,255,0.35); }
-  .drawer-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 0; flex-shrink: 0; }
+  .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:30;display:none;}
+  .drawer-overlay.open{display:block;}
+  .drawer{position:fixed;top:0;left:0;height:100%;width:min(320px,88vw);background:#1e1e2e;color:#fff;z-index:35;transform:translateX(-100%);transition:transform 0.28s ease;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,0.3);overflow:hidden;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
+  .drawer-header-title{font-weight:bold;font-size:16px;}
+  .drawer-close-btn{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
+  .drawer-body{flex:1 1 auto;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.2) transparent;}
+  .drawer-section-title{font-size:11px;text-transform:uppercase;color:rgba(255,255,255,0.4);letter-spacing:0.08em;margin-top:4px;flex-shrink:0;}
+  .drawer-btn{width:100%;padding:12px 14px;background:#2d2d44;border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;cursor:pointer;text-align:left;font-size:14px;transition:background 0.15s;flex-shrink:0;}
+  .drawer-btn:hover{background:#3a3a58;}
+  .drawer-btn.danger{background:#3d1a1a;border-color:rgba(255,80,80,0.3);color:#ff8080;}
+  .drawer-btn.danger:hover{background:#5a2020;}
+  .drawer-label{font-size:12px;color:rgba(255,255,255,0.5);flex-shrink:0;}
+  .drawer-input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:#12121e;color:#fff;font-size:14px;flex-shrink:0;min-width:0;}
+  .drawer-input::placeholder{color:rgba(255,255,255,0.35);}
+  .drawer-divider{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:4px 0;flex-shrink:0;}
+  .cal-title-label{font-size:11px;color:rgba(255,255,255,0.4);flex-shrink:0;}
+  .med-row{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .med-row .drawer-input{flex:1;}
+  .med-del-btn{background:#5a2020;border:1px solid rgba(255,80,80,0.3);color:#ff8080;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;white-space:nowrap;}
+  .med-del-btn:hover{background:#7a2020;}
 
-  /* Section titres calendriers dans le drawer */
-  .cal-title-row {
-    display: flex; gap: 8px; align-items: center; flex-shrink: 0;
-  }
-  .cal-title-row .drawer-input { flex: 1; }
-  .cal-title-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: -6px; flex-shrink: 0; }
+  /* MODAL NOTE avec médicaments */
+  .note-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;z-index:40;}
+  .note-backdrop.open{display:block;}
+  .note-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;padding:12px;}
+  .note-modal.open{display:flex;}
+  .note-card{width:min(96vw,540px);max-height:94vh;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,0.18);padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+  .note-title{font-weight:bold;font-size:16px;flex-shrink:0;}
 
-  /* MODAL NOTE */
-  .note-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 40; }
-  .note-backdrop.open { display: block; }
-  .note-modal {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    z-index: 50; padding: 16px;
+  /* Section médicaments dans la modal */
+  .meds-section{flex-shrink:0;}
+  .meds-section-title{font-size:12px;font-weight:bold;color:var(--muted);margin-bottom:6px;}
+  .meds-taken-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .med-chip{
+    padding:5px 10px;border-radius:20px;font-size:13px;
+    border:1px solid var(--border);background:#f0f4ff;cursor:pointer;
+    display:flex;align-items:center;gap:4px;transition:background 0.15s;
   }
-  .note-modal.open { display: flex; }
-  .note-card {
-    width: min(92vw, 520px); max-height: 90vh; background: #fff;
-    border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 12px 28px rgba(0,0,0,0.18); padding: 16px;
-    display: flex; flex-direction: column; gap: 10px; overflow: hidden;
-  }
-  .note-title { font-weight: bold; font-size: 16px; flex-shrink: 0; }
-  .note-textarea {
-    flex: 1 1 auto; min-height: 80px; width: 100%;
-    border-radius: 10px; border: 1px solid var(--border);
-    padding: 10px; font-size: 14px; resize: vertical;
-    background: #fff; color: var(--text); overflow-y: auto;
-  }
-  .note-actions { display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
-  .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; background: #f6f7fb; }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-danger  { background: #fff0f0; color: #b00020; border-color: #ffd2d2; }
+  .med-chip.active{background:#007bff;color:#fff;border-color:#007bff;}
+  .med-chip:hover:not(.active){background:#e0eaff;}
+  .meds-quick{display:flex;flex-wrap:wrap;gap:6px;}
+  .med-quick-btn{padding:5px 10px;border-radius:20px;font-size:13px;border:1px solid var(--border);background:#f6f7fb;cursor:pointer;display:flex;align-items:center;gap:4px;}
+  .med-quick-btn:hover{background:#e8f0fe;}
 
-  /* MODAL CONFIRM */
-  .confirm-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 60; }
-  .confirm-backdrop.open { display: block; }
-  .confirm-modal {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    z-index: 70; padding: 16px;
-  }
-  .confirm-modal.open { display: flex; }
-  .confirm-card {
-    width: min(92vw, 420px); background: #fff; border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.22); padding: 24px;
-    display: flex; flex-direction: column; gap: 16px;
-  }
-  .confirm-title { font-weight: bold; font-size: 17px; }
-  .confirm-msg   { font-size: 14px; color: var(--muted); line-height: 1.5; }
-  .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .note-textarea{flex:1 1 auto;min-height:70px;width:100%;border-radius:10px;border:1px solid var(--border);padding:10px;font-size:14px;resize:vertical;background:#fff;color:var(--text);overflow-y:auto;}
+  .note-actions{display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+  .btn{padding:9px 13px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:#f6f7fb;font-size:13px;}
+  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn-danger{background:#fff0f0;color:#b00020;border-color:#ffd2d2;}
+
+  /* CONFIRM */
+  .confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;z-index:60;}
+  .confirm-backdrop.open{display:block;}
+  .confirm-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:70;padding:16px;}
+  .confirm-modal.open{display:flex;}
+  .confirm-card{width:min(92vw,400px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
+  .confirm-title{font-weight:bold;font-size:16px;}
+  .confirm-msg{font-size:13px;color:var(--muted);line-height:1.5;}
+  .confirm-actions{display:flex;gap:8px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -200,7 +136,7 @@
   <nav class="global-nav">
     <button class="nav-btn" id="globalPrevBtn">&#9664;</button>
     <div class="ym-global">
-      <div class="ym-global-year"  id="globalYear">&mdash;</div>
+      <div class="ym-global-year" id="globalYear">&mdash;</div>
       <div class="ym-global-month" id="globalMonth">&mdash;</div>
     </div>
     <button class="nav-btn" id="globalNextBtn">&#9654;</button>
@@ -208,7 +144,6 @@
   </nav>
 </header>
 
-<!-- DRAWER GLOBAL -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
@@ -225,23 +160,36 @@
 <div class="note-modal" id="noteModal" role="dialog" aria-modal="true" hidden>
   <div class="note-card">
     <div class="note-title" id="noteModalTitle">Note</div>
-    <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note..."></textarea>
+
+    <!-- Médicaments pris ce jour -->
+    <div class="meds-section" id="medsTakenSection">
+      <div class="meds-section-title">Médicaments pris ce jour :</div>
+      <div class="meds-taken-list" id="medsTakenList"></div>
+    </div>
+
+    <!-- Accès rapide aux médicaments déjà utilisés -->
+    <div class="meds-section" id="medsQuickSection" style="display:none">
+      <div class="meds-section-title">Ajout rapide (déjà pris dans ce calendrier) :</div>
+      <div class="meds-quick" id="medsQuickList"></div>
+    </div>
+
+    <textarea id="noteTextarea" class="note-textarea" placeholder="Note libre..."></textarea>
     <div class="note-actions">
-      <button class="btn btn-danger"  id="noteDeleteBtn">Supprimer</button>
-      <button class="btn"             id="noteCancelBtn">Annuler</button>
+      <button class="btn btn-danger" id="noteDeleteBtn">Supprimer</button>
+      <button class="btn"            id="noteCancelBtn">Annuler</button>
       <button class="btn btn-primary" id="noteSaveBtn">Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL CONFIRM -->
+<!-- CONFIRM -->
 <div class="confirm-backdrop" id="confirmBackdrop"></div>
-<div class="confirm-modal"    id="confirmModal" role="dialog" aria-modal="true">
+<div class="confirm-modal" id="confirmModal" role="dialog" aria-modal="true">
   <div class="confirm-card">
     <div class="confirm-title" id="confirmTitle">Confirmation</div>
     <div class="confirm-msg"   id="confirmMsg"></div>
     <div class="confirm-actions">
-      <button class="btn"           id="confirmCancelBtn">Annuler</button>
+      <button class="btn" id="confirmCancelBtn">Annuler</button>
       <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
     </div>
   </div>
@@ -249,361 +197,437 @@
 
 <script>
 (() => {
+  'use strict';
   const LOCK_BEFORE_ISO = '2025-10-06';
-  const DOUBLE_DELAY = 280, TAP_MAX = 350, MOVE_TOL = 10;
-  const CALS_META_KEY = 'suiviSante.calendars'; // liste des id de calendriers
+  const DOUBLE_DELAY=280,TAP_MAX=350,MOVE_TOL=10;
+  const CALS_META_KEY='suiviSante.calendars';
 
-  const toISO      = d => d.toISOString().slice(0,10);
-  const nextState  = s => (s + 1) % 3;
-  const applyState = (el, s) => { el.classList.remove('state-0','state-1','state-2'); el.classList.add('state-'+s); };
-  const persist    = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
-  const loadLS     = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
+  // Pool de pictogrammes disponibles (uniques)
+  const PICT_POOL = [
+    '💊','💉','🩺','🌡️','🩹','💆','🧴','🍃','🫀','🧠',
+    '🌿','🔵','🟣','🟡','🔴','⚡','❄️','🔥','⭐','🎯',
+    '🌙','☀️','🍵','🫖','🧪','🩻','🫁','🦷','👁️','🫶'
+  ];
+
+  const toISO=(d)=>d.toISOString().slice(0,10);
+  const nextState=(s)=>(s+1)%3;
+  const applyState=(el,s)=>{el.classList.remove('state-0','state-1','state-2');el.classList.add('state-'+s);};
+  const persist=(key,obj)=>localStorage.setItem(key,JSON.stringify(obj));
+  const loadLS=(key)=>{try{return JSON.parse(localStorage.getItem(key));}catch{return null;}};
 
   /* ── Confirm modal ── */
-  function showConfirm(title, msg) {
-    return new Promise(resolve => {
-      document.getElementById('confirmTitle').textContent = title;
-      document.getElementById('confirmMsg').textContent   = msg;
+  function showConfirm(title,msg){
+    return new Promise(resolve=>{
+      document.getElementById('confirmTitle').textContent=title;
+      document.getElementById('confirmMsg').textContent=msg;
       document.getElementById('confirmBackdrop').classList.add('open');
       document.getElementById('confirmModal').classList.add('open');
-      const ok  = document.getElementById('confirmOkBtn');
-      const cancel = document.getElementById('confirmCancelBtn');
-      function cleanup(val) {
+      const ok=document.getElementById('confirmOkBtn');
+      const cancel=document.getElementById('confirmCancelBtn');
+      function cleanup(val){
         document.getElementById('confirmBackdrop').classList.remove('open');
         document.getElementById('confirmModal').classList.remove('open');
-        ok.onclick = null; cancel.onclick = null;
-        resolve(val);
+        ok.onclick=null;cancel.onclick=null;resolve(val);
       }
-      ok.onclick     = () => cleanup(true);
-      cancel.onclick = () => cleanup(false);
+      ok.onclick=()=>cleanup(true);cancel.onclick=()=>cleanup(false);
     });
   }
 
   /* ── GlobalState ── */
-  const globalState = {
-    year: new Date().getFullYear(),
-    month: new Date().getMonth(),
-    calendars: [],   // instances actives
-    calDefs: []      // metadonnees persistees [{id, title, sinceLabel, legend}]
-  };
+  const globalState={year:new Date().getFullYear(),month:new Date().getMonth(),calendars:[],calDefs:[]};
+  function saveCalDefs(){persist(CALS_META_KEY,globalState.calDefs);}
 
-  function saveCalDefs() {
-    persist(CALS_META_KEY, globalState.calDefs.map(d => ({
-      id: d.id, title: d.title, sinceLabel: d.sinceLabel, legend: d.legend
-    })));
+  /* ── Médicaments globaux par calendrier ─────────────────────────────
+     Structure par calendrier: {id, name, icon} stocké dans localStorage
+     Clé: suiviSante.meds.<calId>  => [{id,name,icon}, ...]
+  ─────────────────────────────────────────────────────────────────── */
+  function loadMeds(calId){return loadLS('suiviSante.meds.'+calId)||[];}
+  function saveMeds(calId,meds){persist('suiviSante.meds.'+calId,meds);}
+
+  // Icone utilisée dans un calendrier: renvoie les icons déjà prises (tous calendriers)
+  function usedIcons(){
+    const used=new Set();
+    globalState.calDefs.forEach(def=>{
+      loadMeds(def.id).forEach(m=>used.add(m.icon));
+    });
+    return used;
+  }
+  function nextAvailableIcon(){
+    const used=usedIcons();
+    return PICT_POOL.find(p=>!used.has(p))||'❓';
   }
 
   /* ── Navigation globale ── */
-  function updateGlobalDisplay() {
-    const d = new Date(Date.UTC(globalState.year, globalState.month, 1));
-    document.getElementById('globalYear').textContent  = globalState.year;
-    document.getElementById('globalMonth').textContent = d.toLocaleString('fr-FR', {month:'long'}).toUpperCase();
+  function updateGlobalDisplay(){
+    const d=new Date(Date.UTC(globalState.year,globalState.month,1));
+    document.getElementById('globalYear').textContent=globalState.year;
+    document.getElementById('globalMonth').textContent=d.toLocaleString('fr-FR',{month:'long'}).toUpperCase();
   }
-  function globalNav(delta) {
-    globalState.month += delta;
-    if (globalState.month < 0)  { globalState.month = 11; globalState.year--; }
-    if (globalState.month > 11) { globalState.month = 0;  globalState.year++; }
+  function globalNav(delta){
+    globalState.month+=delta;
+    if(globalState.month<0){globalState.month=11;globalState.year--;}
+    if(globalState.month>11){globalState.month=0;globalState.year++;}
     updateGlobalDisplay();
-    globalState.calendars.forEach(cal => {
-      cal.current.year = globalState.year; cal.current.month = globalState.month;
-      cal.renderCalendar(); if (cal.notesVisible) cal.renderMonthNotes();
-    });
+    globalState.calendars.forEach(cal=>{cal.current.year=globalState.year;cal.current.month=globalState.month;cal.renderCalendar();if(cal.notesVisible)cal.renderMonthNotes();});
   }
-  document.getElementById('globalPrevBtn').onclick  = () => globalNav(-1);
-  document.getElementById('globalNextBtn').onclick  = () => globalNav(+1);
-  document.getElementById('globalTodayBtn').onclick = () => {
-    globalState.year = new Date().getFullYear(); globalState.month = new Date().getMonth();
+  document.getElementById('globalPrevBtn').onclick=()=>globalNav(-1);
+  document.getElementById('globalNextBtn').onclick=()=>globalNav(+1);
+  document.getElementById('globalTodayBtn').onclick=()=>{
+    globalState.year=new Date().getFullYear();globalState.month=new Date().getMonth();
     updateGlobalDisplay();
-    globalState.calendars.forEach(cal => {
-      cal.current.year = globalState.year; cal.current.month = globalState.month;
-      cal.renderCalendar(); if (cal.notesVisible) cal.renderMonthNotes();
-    });
+    globalState.calendars.forEach(cal=>{cal.current.year=globalState.year;cal.current.month=globalState.month;cal.renderCalendar();if(cal.notesVisible)cal.renderMonthNotes();});
   };
   updateGlobalDisplay();
 
-  /* ── Drawer global ── */
-  const drawer        = document.getElementById('drawer');
-  const drawerOverlay = document.getElementById('drawerOverlay');
-  const drawerBody    = document.getElementById('drawerBody');
+  /* ── Drawer ── */
+  const drawer=document.getElementById('drawer');
+  const drawerOverlay=document.getElementById('drawerOverlay');
+  const drawerBody=document.getElementById('drawerBody');
+  function closeDrawer(){drawer.classList.remove('open');drawerOverlay.classList.remove('open');}
+  document.getElementById('drawerCloseBtn').onclick=closeDrawer;
+  drawerOverlay.onclick=closeDrawer;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeNoteModal();}});
 
-  function closeDrawer() { drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); }
-  document.getElementById('drawerCloseBtn').onclick = closeDrawer;
-  drawerOverlay.onclick = closeDrawer;
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeNoteModal(); } });
+  function buildDrawer(){
+    drawerBody.innerHTML='';
+    const sec=(label)=>{const el=document.createElement('div');el.className='drawer-section-title';el.textContent=label;drawerBody.appendChild(el);};
+    const btn=(label,cls,onClick)=>{const b=document.createElement('button');b.className='drawer-btn'+(cls?' '+cls:'');b.textContent=label;b.onclick=onClick;drawerBody.appendChild(b);return b;};
+    const divider=()=>{const hr=document.createElement('hr');hr.className='drawer-divider';drawerBody.appendChild(hr);};
+    const inp=(placeholder,val='')=>{const i=document.createElement('input');i.type='text';i.className='drawer-input';i.placeholder=placeholder;i.value=val;drawerBody.appendChild(i);return i;};
+    const label=(txt)=>{const l=document.createElement('div');l.className='drawer-label';l.textContent=txt;drawerBody.appendChild(l);return l;};
 
-  function buildDrawer() {
-    drawerBody.innerHTML = '';
-
-    const sec = (label) => {
-      const el = document.createElement('div'); el.className = 'drawer-section-title'; el.textContent = label;
-      drawerBody.appendChild(el);
-    };
-    const btn = (label, cls, onClick) => {
-      const b = document.createElement('button');
-      b.className = 'drawer-btn' + (cls ? ' '+cls : '');
-      b.textContent = label; b.onclick = onClick;
-      drawerBody.appendChild(b);
-    };
-    const divider = () => { const hr = document.createElement('hr'); hr.className='drawer-divider'; drawerBody.appendChild(hr); };
-
-    /* Export global */
+    /* Export / Import */
     sec('Export / Import');
-    btn('Exporter tous les calendriers (JSON)', '', () => {
-      const payload = { calendars: globalState.calDefs.map(d => ({id: d.id, title: d.title, sinceLabel: d.sinceLabel, legend: d.legend})), data: {} };
-      globalState.calDefs.forEach(d => {
-        payload.data[d.id] = {
-          days:  loadLS('suiviSante.days.'+d.id)  || {},
-          notes: loadLS('suiviSante.notes.'+d.id) || {}
+    btn('Exporter tous les calendriers (JSON)','',()=>{
+      const payload={calendars:globalState.calDefs,data:{}};
+      globalState.calDefs.forEach(d=>{
+        payload.data[d.id]={
+          days:loadLS('suiviSante.days.'+d.id)||{},
+          notes:loadLS('suiviSante.notes.'+d.id)||{},
+          meds:loadLS('suiviSante.meds.'+d.id)||[]
         };
       });
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-      const url  = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href=url; a.download='suivi_sante.json'; a.click();
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='suivi_sante.json';a.click();
       URL.revokeObjectURL(url);
     });
-
-    const fileInput = document.createElement('input');
-    fileInput.type='file'; fileInput.accept='application/json'; fileInput.style.display='none';
-    fileInput.onchange = async () => {
-      const file = fileInput.files[0]; if (!file) return;
-      try {
-        const parsed = JSON.parse(await file.text());
-        const ok = await showConfirm('Importer', 'Remplacer toutes les donnees actuelles par celles du fichier ?');
-        if (!ok) { fileInput.value=''; return; }
-        // Effacer tout
-        globalState.calDefs.forEach(d => {
-          localStorage.removeItem('suiviSante.days.'+d.id);
-          localStorage.removeItem('suiviSante.notes.'+d.id);
-          localStorage.removeItem('suiviSante.title.'+d.id);
-        });
+    const fi=document.createElement('input');fi.type='file';fi.accept='application/json';fi.style.display='none';
+    fi.onchange=async()=>{
+      const file=fi.files[0];if(!file)return;
+      try{
+        const parsed=JSON.parse(await file.text());
+        const ok=await showConfirm('Importer','Remplacer toutes les données actuelles par celles du fichier ?');
+        if(!ok){fi.value='';return;}
+        globalState.calDefs.forEach(d=>{localStorage.removeItem('suiviSante.days.'+d.id);localStorage.removeItem('suiviSante.notes.'+d.id);localStorage.removeItem('suiviSante.meds.'+d.id);localStorage.removeItem('suiviSante.title.'+d.id);});
         localStorage.removeItem(CALS_META_KEY);
-        // Recharger
-        if (parsed.calendars) {
-          persist(CALS_META_KEY, parsed.calendars);
-          parsed.calendars.forEach(def => {
-            const d = parsed.data && parsed.data[def.id];
-            if (d) {
-              persist('suiviSante.days.'+def.id,  d.days  || {});
-              persist('suiviSante.notes.'+def.id, d.notes || {});
-            }
-            if (def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
+        if(parsed.calendars){
+          persist(CALS_META_KEY,parsed.calendars);
+          parsed.calendars.forEach(def=>{
+            const d=parsed.data&&parsed.data[def.id];
+            if(d){persist('suiviSante.days.'+def.id,d.days||{});persist('suiviSante.notes.'+def.id,d.notes||{});persist('suiviSante.meds.'+def.id,d.meds||[]);}
+            if(def.title)localStorage.setItem('suiviSante.title.'+def.id,def.title);
           });
         }
         location.reload();
-      } catch { alert('Fichier invalide'); }
-      fileInput.value='';
+      }catch{alert('Fichier invalide');}
+      fi.value='';
     };
-    drawerBody.appendChild(fileInput);
-    btn('Importer (JSON)', '', () => fileInput.click());
-
+    drawerBody.appendChild(fi);
+    btn('Importer (JSON)','',()=>fi.click());
     divider();
 
-    /* Titres des calendriers */
+    /* Titres */
     sec('Titres des calendriers');
-    globalState.calDefs.forEach(def => {
-      const row = document.createElement('div'); row.className='cal-title-row';
-      const lbl = document.createElement('div'); lbl.className='cal-title-label'; lbl.textContent=def.id;
-
-      const inp = document.createElement('input');
-      inp.type='text'; inp.className='drawer-input';
-      inp.value = localStorage.getItem('suiviSante.title.'+def.id) || def.title;
-      inp.placeholder = def.title;
-      inp.oninput = () => {
-        const v = inp.value.trim() || def.title;
-        localStorage.setItem('suiviSante.title.'+def.id, v);
-        const cal = globalState.calendars.find(c => c.id === def.id);
-        if (cal) { cal.el.title.textContent = v; }
+    globalState.calDefs.forEach(def=>{
+      label(def.title);
+      const i=inp('Titre',localStorage.getItem('suiviSante.title.'+def.id)||def.title);
+      i.oninput=()=>{
+        const v=i.value.trim()||def.title;
+        localStorage.setItem('suiviSante.title.'+def.id,v);
+        const cal=globalState.calendars.find(c=>c.id===def.id);
+        if(cal)cal.el.title.textContent=v;
       };
-      drawerBody.appendChild(lbl);
-      drawerBody.appendChild(inp);
     });
-
     divider();
 
-    /* Ajouter un calendrier */
+    /* Médicaments par calendrier */
+    sec('Médicaments par calendrier');
+    globalState.calDefs.forEach(def=>{
+      const calTitle=localStorage.getItem('suiviSante.title.'+def.id)||def.title;
+      label('── '+calTitle);
+      const meds=loadMeds(def.id);
+
+      // Liste des médicaments existants
+      const medsContainer=document.createElement('div');
+      medsContainer.style.cssText='display:flex;flex-direction:column;gap:6px;';
+      drawerBody.appendChild(medsContainer);
+
+      function renderMedsList(){
+        medsContainer.innerHTML='';
+        const currentMeds=loadMeds(def.id);
+        currentMeds.forEach((med,idx)=>{
+          const row=document.createElement('div');row.className='med-row';
+          const iconSpan=document.createElement('span');iconSpan.textContent=med.icon;iconSpan.style.fontSize='18px';
+          const nameInp=document.createElement('input');nameInp.type='text';nameInp.className='drawer-input';nameInp.value=med.name;
+          nameInp.oninput=()=>{
+            const ms=loadMeds(def.id);ms[idx].name=nameInp.value.trim()||ms[idx].name;saveMeds(def.id,ms);
+            const cal=globalState.calendars.find(c=>c.id===def.id);if(cal){cal.renderLegend();cal.renderCalendar();}
+          };
+          const delBtn=document.createElement('button');delBtn.className='med-del-btn';delBtn.textContent='✕';
+          delBtn.onclick=async()=>{
+            const ok=await showConfirm('Supprimer le médicament',`Supprimer "${med.name}" de ce calendrier ?`);
+            if(!ok)return;
+            const ms=loadMeds(def.id);ms.splice(idx,1);saveMeds(def.id,ms);
+            const cal=globalState.calendars.find(c=>c.id===def.id);if(cal){cal.renderLegend();cal.renderCalendar();}
+            renderMedsList();
+          };
+          row.appendChild(iconSpan);row.appendChild(nameInp);row.appendChild(delBtn);
+          medsContainer.appendChild(row);
+        });
+
+        // Ajouter un médicament
+        const addRow=document.createElement('div');addRow.className='med-row';
+        const newInp=document.createElement('input');newInp.type='text';newInp.className='drawer-input';newInp.placeholder='Nouveau médicament...';
+        const addBtn=document.createElement('button');addBtn.className='drawer-btn';addBtn.style.cssText='width:auto;padding:8px 12px;flex-shrink:0;';addBtn.textContent='＋';
+        addBtn.onclick=()=>{
+          const name=newInp.value.trim();if(!name)return;
+          const icon=nextAvailableIcon();
+          const ms=loadMeds(def.id);ms.push({id:'med_'+Date.now(),name,icon});saveMeds(def.id,ms);
+          newInp.value='';
+          const cal=globalState.calendars.find(c=>c.id===def.id);if(cal){cal.renderLegend();cal.renderCalendar();}
+          renderMedsList();
+        };
+        addRow.appendChild(newInp);addRow.appendChild(addBtn);
+        medsContainer.appendChild(addRow);
+      }
+      renderMedsList();
+    });
+    divider();
+
+    /* Nouveau calendrier */
     sec('Nouveau calendrier');
-    const newTitleInp = document.createElement('input');
-    newTitleInp.type='text'; newTitleInp.className='drawer-input';
-    newTitleInp.placeholder='Titre du nouveau calendrier';
-    drawerBody.appendChild(newTitleInp);
-
-    const newSinceInp = document.createElement('input');
-    newSinceInp.type='text'; newSinceInp.className='drawer-input';
-    newSinceInp.placeholder='Libelle "depuis" (ex: Depuis la derniere crise)';
-    drawerBody.appendChild(newSinceInp);
-
-    btn('Ajouter ce calendrier', '', () => {
-      const t = newTitleInp.value.trim();
-      if (!t) { alert('Veuillez saisir un titre.'); return; }
-      const id = 'cal_' + Date.now();
-      const def = {
-        id,
-        title: t,
-        sinceLabel: newSinceInp.value.trim() || 'Nombre de jours depuis le dernier evenement :',
-        legend: [
-          {label:'Bon',    color:'var(--green)'},
-          {label:'Moyen',  color:'var(--orange)'},
-          {label:'Mauvais',color:'var(--red)'}
-        ]
-      };
-      globalState.calDefs.push(def);
-      saveCalDefs();
-      localStorage.setItem('suiviSante.title.'+id, t);
-      createCalendarDOM(def);
-      const cal = initCalendar(def);
-      globalState.calendars.push(cal);
-      newTitleInp.value=''; newSinceInp.value='';
-      buildDrawer();
-      closeDrawer();
+    const nt=inp('Titre du nouveau calendrier');
+    const ns=inp('Libellé "depuis" (ex: Depuis la dernière crise)');
+    btn('Ajouter ce calendrier','',()=>{
+      const t=nt.value.trim();if(!t){alert('Veuillez saisir un titre.');return;}
+      const id='cal_'+Date.now();
+      const def={id,title:t,sinceLabel:ns.value.trim()||'Nombre de jours depuis le dernier événement :',legend:[{label:'Bon',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}]};
+      globalState.calDefs.push(def);saveCalDefs();
+      localStorage.setItem('suiviSante.title.'+id,t);
+      createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);
+      nt.value='';ns.value='';buildDrawer();closeDrawer();
     });
-
     divider();
 
-    /* Reset global */
+    /* Danger */
     sec('Zone dangereuse');
-    btn('Reinitialiser TOUS les calendriers', 'danger', async () => {
-      const ok = await showConfirm('Reinitialiser tout', 'Effacer toutes les donnees de tous les calendriers ? Cette action est irreversible (sauf import).');
-      if (!ok) return;
-      globalState.calDefs.forEach(d => {
-        localStorage.removeItem('suiviSante.days.'+d.id);
-        localStorage.removeItem('suiviSante.notes.'+d.id);
-      });
-      globalState.calendars.forEach(cal => { cal.data={}; cal.notes={}; cal.renderCalendar(); cal.updateSince(); cal.renderMonthNotes(); });
+    btn('Réinitialiser TOUS les calendriers','danger',async()=>{
+      const ok=await showConfirm('Réinitialiser tout','Effacer toutes les données de tous les calendriers ?');
+      if(!ok)return;
+      globalState.calDefs.forEach(d=>{localStorage.removeItem('suiviSante.days.'+d.id);localStorage.removeItem('suiviSante.notes.'+d.id);});
+      globalState.calendars.forEach(cal=>{cal.data={};cal.notes={};cal.renderCalendar();cal.updateSince();cal.renderMonthNotes();});
       closeDrawer();
     });
   }
 
-  document.getElementById('globalMenuBtn').onclick = () => {
-    buildDrawer();
-    drawer.classList.add('open'); drawerOverlay.classList.add('open');
-    setTimeout(() => drawerBody.querySelector('.drawer-btn')?.focus(), 50);
-  };
+  document.getElementById('globalMenuBtn').onclick=()=>{buildDrawer();drawer.classList.add('open');drawerOverlay.classList.add('open');setTimeout(()=>drawerBody.querySelector('.drawer-btn')?.focus(),50);};
 
-  /* ── DOM d'une card calendrier ── */
-  function createCalendarDOM(def) {
-    const container = document.getElementById('mainContainer');
-    const section = document.createElement('section');
-    section.className = 'calendar-card'; section.id = 'card_'+def.id;
-
-    section.innerHTML = `
-      <button class="delete-cal-btn" id="delBtn_${def.id}" title="Supprimer ce calendrier">&#10005;</button>
-      <div class="calendar-header">
-        <h2 class="calendar-title" id="calTitle_${def.id}">${localStorage.getItem('suiviSante.title.'+def.id)||def.title}</h2>
-      </div>
-      <div class="weekdays">
-        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
-      </div>
+  /* ── DOM card ── */
+  function createCalendarDOM(def){
+    const container=document.getElementById('mainContainer');
+    const section=document.createElement('section');
+    section.className='calendar-card';section.id='card_'+def.id;
+    section.innerHTML=`
+      <button class="delete-cal-btn" id="delBtn_${def.id}" title="Supprimer">&#10005;</button>
+      <div class="calendar-header"><h2 class="calendar-title" id="calTitle_${def.id}">${localStorage.getItem('suiviSante.title.'+def.id)||def.title}</h2></div>
+      <div class="weekdays"><div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div></div>
       <div class="days" id="daysGrid_${def.id}"></div>
-      <div class="legend">
-        ${(def.legend||[]).map(l=>`<div class="legend-item"><span class="color-box" style="background:${l.color}"></span>${l.label}</div>`).join('')}
-      </div>
-      <div class="notes-toggle-wrapper">
-        <button id="toggleNotes_${def.id}" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
-      </div>
+      <div class="legend" id="legend_${def.id}"></div>
+      <div class="legend-meds" id="legendMeds_${def.id}"></div>
+      <div class="notes-toggle-wrapper"><button id="toggleNotes_${def.id}" class="notes-toggle-btn">Afficher / Cacher les notes du mois</button></div>
       <p class="since-line" id="sinceText_${def.id}">N/A</p>
       <div class="notes-list" id="notesList_${def.id}"></div>
     `;
     container.appendChild(section);
-
-    // Bouton supprimer
-    document.getElementById('delBtn_'+def.id).onclick = async () => {
-      const title = document.getElementById('calTitle_'+def.id).textContent;
-      const ok = await showConfirm('Supprimer le calendrier', `Supprimer "${title}" et toutes ses donnees ? Il pourra etre restaure via un import JSON.`);
-      if (!ok) return;
-      // Suppr localStorage
-      localStorage.removeItem('suiviSante.days.'+def.id);
-      localStorage.removeItem('suiviSante.notes.'+def.id);
-      localStorage.removeItem('suiviSante.title.'+def.id);
-      // Suppr de globalState
-      globalState.calDefs = globalState.calDefs.filter(d => d.id !== def.id);
-      globalState.calendars = globalState.calendars.filter(c => c.id !== def.id);
-      saveCalDefs();
+    document.getElementById('delBtn_'+def.id).onclick=async()=>{
+      const title=document.getElementById('calTitle_'+def.id).textContent;
+      const ok=await showConfirm('Supprimer le calendrier',`Supprimer "${title}" et toutes ses données ?`);
+      if(!ok)return;
+      localStorage.removeItem('suiviSante.days.'+def.id);localStorage.removeItem('suiviSante.notes.'+def.id);localStorage.removeItem('suiviSante.meds.'+def.id);localStorage.removeItem('suiviSante.title.'+def.id);
+      globalState.calDefs=globalState.calDefs.filter(d=>d.id!==def.id);globalState.calendars=globalState.calendars.filter(c=>c.id!==def.id);saveCalDefs();
       section.remove();
     };
   }
 
   /* ── Modal note ── */
-  const noteBackdrop = document.getElementById('noteBackdrop');
-  const noteModal    = document.getElementById('noteModal');
-  const noteTitleEl  = document.getElementById('noteModalTitle');
-  const noteTextarea = document.getElementById('noteTextarea');
-  let activeCal = null, editingISO = null;
+  const noteBackdrop=document.getElementById('noteBackdrop');
+  const noteModal=document.getElementById('noteModal');
+  const noteTitleEl=document.getElementById('noteModalTitle');
+  const noteTextarea=document.getElementById('noteTextarea');
+  let activeCal=null,editingISO=null,currentMedsTaken=[];
 
-  function openNoteModal(cal, iso) {
-    activeCal=cal; editingISO=iso;
-    noteTitleEl.textContent = 'Note du ' + iso;
-    noteTextarea.value = cal.notes[iso] || '';
+  function openNoteModal(cal,iso){
+    activeCal=cal;editingISO=iso;
+    noteTitleEl.textContent='Note du '+iso;
+    const noteData=cal.notes[iso]||{};
+    noteTextarea.value=noteData.text||'';
+    currentMedsTaken=[...(noteData.meds||[])];
+
+    // Rendre les chips de médicaments
+    const meds=loadMeds(cal.id);
+    const takenList=document.getElementById('medsTakenList');
+    const quickList=document.getElementById('medsQuickList');
+    const takenSection=document.getElementById('medsTakenSection');
+    const quickSection=document.getElementById('medsQuickSection');
+
+    takenList.innerHTML='';
+    quickList.innerHTML='';
+
+    if(meds.length===0){
+      takenSection.style.display='none';
+      quickSection.style.display='none';
+    } else {
+      takenSection.style.display='block';
+      // Chips toggleables pour chaque médicament
+      meds.forEach(med=>{
+        const chip=document.createElement('div');chip.className='med-chip';
+        chip.innerHTML=`<span>${med.icon}</span><span>${med.name}</span>`;
+        const isTaken=currentMedsTaken.includes(med.id);
+        if(isTaken)chip.classList.add('active');
+        chip.onclick=()=>{
+          if(currentMedsTaken.includes(med.id)){currentMedsTaken=currentMedsTaken.filter(x=>x!==med.id);chip.classList.remove('active');}
+          else{currentMedsTaken.push(med.id);chip.classList.add('active');}
+        };
+        takenList.appendChild(chip);
+      });
+
+      // Accès rapide : médicaments déjà pris dans d'autres jours
+      const allMedIds=new Set();
+      Object.values(cal.notes).forEach(n=>{if(n.meds)n.meds.forEach(m=>allMedIds.add(m));});
+      const prevMeds=meds.filter(m=>allMedIds.has(m.id)&&!currentMedsTaken.includes(m.id));
+      if(prevMeds.length>0){
+        quickSection.style.display='block';
+        prevMeds.forEach(med=>{
+          const b=document.createElement('div');b.className='med-quick-btn';
+          b.innerHTML=`<span>${med.icon}</span><span>${med.name}</span>`;
+          b.onclick=()=>{
+            if(!currentMedsTaken.includes(med.id)){
+              currentMedsTaken.push(med.id);
+              // Update chip
+              const chips=takenList.querySelectorAll('.med-chip');
+              chips.forEach(ch=>{if(ch.querySelector('span:first-child').textContent===med.icon)ch.classList.add('active');});
+              b.remove();if(quickList.children.length===0)quickSection.style.display='none';
+            }
+          };
+          quickList.appendChild(b);
+        });
+      } else {
+        quickSection.style.display='none';
+      }
+    }
+
     document.body.style.overflow='hidden';
-    noteBackdrop.classList.add('open'); noteModal.classList.add('open');
-    noteBackdrop.removeAttribute('hidden'); noteModal.removeAttribute('hidden');
+    noteBackdrop.classList.add('open');noteModal.classList.add('open');
+    noteBackdrop.removeAttribute('hidden');noteModal.removeAttribute('hidden');
     setTimeout(()=>noteTextarea.focus(),0);
   }
-  function closeNoteModal() {
-    noteBackdrop.classList.remove('open'); noteModal.classList.remove('open');
-    noteBackdrop.setAttribute('hidden',''); noteModal.setAttribute('hidden','');
-    document.body.style.overflow=''; activeCal=null; editingISO=null;
+
+  function closeNoteModal(){
+    noteBackdrop.classList.remove('open');noteModal.classList.remove('open');
+    noteBackdrop.setAttribute('hidden','');noteModal.setAttribute('hidden','');
+    document.body.style.overflow='';activeCal=null;editingISO=null;currentMedsTaken=[];
   }
 
-  document.getElementById('noteSaveBtn').onclick = () => {
-    if (!activeCal||!editingISO) return;
-    const val = noteTextarea.value.trim();
-    if (val==='') delete activeCal.notes[editingISO]; else activeCal.notes[editingISO]=val;
-    persist('suiviSante.notes.'+activeCal.id, activeCal.notes);
-    activeCal.renderCalendar(); if (activeCal.notesVisible) activeCal.renderMonthNotes();
+  document.getElementById('noteSaveBtn').onclick=()=>{
+    if(!activeCal||!editingISO)return;
+    const text=noteTextarea.value.trim();
+    const meds=[...currentMedsTaken];
+    if(text===''&&meds.length===0){delete activeCal.notes[editingISO];}
+    else{activeCal.notes[editingISO]={text,meds};}
+    persist('suiviSante.notes.'+activeCal.id,activeCal.notes);
+    activeCal.renderCalendar();if(activeCal.notesVisible)activeCal.renderMonthNotes();
     closeNoteModal();
   };
-  document.getElementById('noteDeleteBtn').onclick = async () => {
-    if (!activeCal||!editingISO) return;
-    const ok = await showConfirm('Supprimer la note', `Supprimer la note du ${editingISO} ?`);
-    if (!ok) return;
+  document.getElementById('noteDeleteBtn').onclick=async()=>{
+    if(!activeCal||!editingISO)return;
+    const ok=await showConfirm('Supprimer la note',`Supprimer la note et les médicaments du ${editingISO} ?`);
+    if(!ok)return;
     delete activeCal.notes[editingISO];
-    persist('suiviSante.notes.'+activeCal.id, activeCal.notes);
-    activeCal.renderCalendar(); if (activeCal.notesVisible) activeCal.renderMonthNotes();
+    persist('suiviSante.notes.'+activeCal.id,activeCal.notes);
+    activeCal.renderCalendar();if(activeCal.notesVisible)activeCal.renderMonthNotes();
     closeNoteModal();
   };
-  document.getElementById('noteCancelBtn').onclick = closeNoteModal;
-  noteBackdrop.addEventListener('click', closeNoteModal);
+  document.getElementById('noteCancelBtn').onclick=closeNoteModal;
+  noteBackdrop.addEventListener('click',closeNoteModal);
 
   /* ── Fabrique calendrier ── */
-  function initCalendar(def) {
-    const cal = {
-      id: def.id,
-      sinceLabel: def.sinceLabel,
-      data:  loadLS('suiviSante.days.'+def.id)  || {},
-      notes: loadLS('suiviSante.notes.'+def.id) || {},
-      current: { year: globalState.year, month: globalState.month },
-      notesVisible: false,
-      el: {
-        title:          document.getElementById('calTitle_'+def.id),
-        daysGrid:       document.getElementById('daysGrid_'+def.id),
-        sinceText:      document.getElementById('sinceText_'+def.id),
-        notesList:      document.getElementById('notesList_'+def.id),
-        toggleNotesBtn: document.getElementById('toggleNotes_'+def.id),
+  function initCalendar(def){
+    const cal={
+      id:def.id,sinceLabel:def.sinceLabel,
+      data:loadLS('suiviSante.days.'+def.id)||{},
+      notes:loadLS('suiviSante.notes.'+def.id)||{},
+      current:{year:globalState.year,month:globalState.month},
+      notesVisible:false,
+      el:{
+        title:document.getElementById('calTitle_'+def.id),
+        daysGrid:document.getElementById('daysGrid_'+def.id),
+        sinceText:document.getElementById('sinceText_'+def.id),
+        notesList:document.getElementById('notesList_'+def.id),
+        toggleNotesBtn:document.getElementById('toggleNotes_'+def.id),
+        legend:document.getElementById('legend_'+def.id),
+        legendMeds:document.getElementById('legendMeds_'+def.id),
       }
     };
 
-    cal.getState = iso => cal.data[iso] ?? 0;
-    cal.setState = (iso, s) => { cal.data[iso]=s; persist('suiviSante.days.'+cal.id, cal.data); };
+    cal.getState=iso=>cal.data[iso]??0;
+    cal.setState=(iso,s)=>{cal.data[iso]=s;persist('suiviSante.days.'+cal.id,cal.data);};
 
-    cal.renderCalendar = () => {
-      const {year, month} = cal.current;
-      const grid = cal.el.daysGrid; grid.innerHTML='';
-      const firstDay = new Date(Date.UTC(year, month, 1));
-      const daysInMonth = new Date(Date.UTC(year, month+1, 0)).getUTCDate();
-      const todayISO = toISO(new Date());
-      const startWeekday = (firstDay.getUTCDay()+6)%7;
+    /* Légende états */
+    const STATE_LEGEND=def.legend||[{label:'Bon',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}];
 
-      for (let i=0;i<startWeekday;i++) {
-        const d=document.createElement('div'); d.className='day out'; grid.appendChild(d);
-      }
-      for (let d=1;d<=daysInMonth;d++) {
-        const cell=document.createElement('div'); cell.className='day'; cell.textContent=d;
+    cal.renderLegend=()=>{
+      cal.el.legend.innerHTML=STATE_LEGEND.map(l=>`<div class="legend-item"><span class="color-box" style="background:${l.color}"></span>${l.label}</div>`).join('');
+      const meds=loadMeds(cal.id);
+      cal.el.legendMeds.innerHTML=meds.length===0?'':
+        '<span style="color:var(--muted);font-size:12px;margin-right:6px;">Médicaments :</span>'+
+        meds.map(m=>`<div class="legend-med-item"><span>${m.icon}</span><span>${m.name}</span></div>`).join('');
+    };
+
+    cal.renderCalendar=()=>{
+      const{year,month}=cal.current;
+      const grid=cal.el.daysGrid;grid.innerHTML='';
+      const firstDay=new Date(Date.UTC(year,month,1));
+      const daysInMonth=new Date(Date.UTC(year,month+1,0)).getUTCDate();
+      const todayISO=toISO(new Date());
+      const startWeekday=(firstDay.getUTCDay()+6)%7;
+      const meds=loadMeds(cal.id);
+      const medMap={};meds.forEach(m=>medMap[m.id]=m);
+
+      for(let i=0;i<startWeekday;i++){const d=document.createElement('div');d.className='day out';grid.appendChild(d);}
+      for(let d=1;d<=daysInMonth;d++){
+        const cell=document.createElement('div');cell.className='day';
         const iso=toISO(new Date(Date.UTC(year,month,d)));
-        if (iso===todayISO) cell.classList.add('today');
-        if (iso>todayISO||iso<LOCK_BEFORE_ISO) {
+        if(iso===todayISO)cell.classList.add('today');
+
+        // Numéro
+        const numDiv=document.createElement('div');numDiv.className='day-num';numDiv.textContent=d;cell.appendChild(numDiv);
+
+        // Médicaments
+        const noteData=cal.notes[iso];
+        const takenMeds=noteData&&noteData.meds?noteData.meds.map(id=>medMap[id]).filter(Boolean):[];
+        if(takenMeds.length>0){
+          const medsDiv=document.createElement('div');medsDiv.className='day-meds';
+          medsDiv.textContent=takenMeds.map(m=>m.icon).join('');
+          cell.appendChild(medsDiv);
+        }
+        // Point bleu si note texte
+        if(noteData&&noteData.text){const dot=document.createElement('div');dot.className='note-dot';cell.appendChild(dot);}
+
+        if(iso>todayISO||iso<LOCK_BEFORE_ISO){
           cell.classList.add('locked');
         } else {
-          applyState(cell, cal.getState(iso));
+          applyState(cell,cal.getState(iso));
           let lastTap=0,sx=0,sy=0,st=0,timer=null;
           cell.addEventListener('pointerdown',e=>{st=Date.now();sx=e.clientX;sy=e.clientY;});
           cell.addEventListener('pointerup',e=>{
@@ -612,94 +636,62 @@
             if(dt>TAP_MAX||dx>MOVE_TOL||dy>MOVE_TOL)return;
             const isDouble=(now-lastTap)<DOUBLE_DELAY;
             if(isDouble){if(timer){clearTimeout(timer);timer=null;}openNoteModal(cal,iso);lastTap=0;}
-            else{lastTap=now;timer=setTimeout(()=>{const n=nextState(cal.getState(iso));cal.setState(iso,n);applyState(cell,n);cal.updateSince();timer=null;},DOUBLE_DELAY);}
+            else{lastTap=now;timer=setTimeout(()=>{const n=nextState(cal.getState(iso));cal.setState(iso,n);applyState(cell,n);cell.querySelector('.day-num').textContent=d;cal.updateSince();timer=null;},DOUBLE_DELAY);}
           });
           cell.addEventListener('dblclick',e=>{e.preventDefault();openNoteModal(cal,iso);});
         }
-        if (cal.notes[iso]) {
-          const ic=document.createElement('div');ic.className='note-icon';ic.textContent='\u270e';cell.appendChild(ic);
-        }
         grid.appendChild(cell);
       }
+      cal.renderLegend();
     };
 
-    cal.renderMonthNotes = () => {
-      if (!cal.notesVisible){cal.el.notesList.style.display='none';return;}
+    cal.renderMonthNotes=()=>{
+      if(!cal.notesVisible){cal.el.notesList.style.display='none';return;}
       const prefix=`${cal.current.year}-${String(cal.current.month+1).padStart(2,'0')}`;
+      const meds=loadMeds(cal.id);const medMap={};meds.forEach(m=>medMap[m.id]=m);
       const entries=Object.entries(cal.notes).filter(([d])=>d.startsWith(prefix)).sort();
-      cal.el.notesList.innerHTML=entries.length===0
-        ?'<em>Aucune note pour ce mois.</em>'
-        :'<strong>Notes du mois :</strong><ul>'+entries.map(([d,n])=>`<li><strong>${d}</strong> : ${n}</li>`).join('')+'</ul>';
+      cal.el.notesList.innerHTML=entries.length===0?'<em>Aucune note pour ce mois.</em>':
+        '<strong>Notes du mois :</strong><ul>'+entries.map(([d,n])=>{
+          const medsStr=n.meds&&n.meds.length?n.meds.map(id=>medMap[id]?medMap[id].icon+' '+medMap[id].name:'').filter(Boolean).join(', '):'';
+          return `<li><strong>${d}</strong>${medsStr?' — '+medsStr:''} ${n.text?': '+n.text:''}</li>`;
+        }).join('')+'</ul>';
       cal.el.notesList.style.display='block';
     };
 
-    cal.updateSince = () => {
-      const todayISO=toISO(new Date()); let last=null;
+    cal.updateSince=()=>{
+      const todayISO=toISO(new Date());let last=null;
       for(const[iso,val]of Object.entries(cal.data)){if(val===2&&iso<=todayISO){if(!last||iso>last)last=iso;}}
-      cal.el.sinceText.textContent = last
-        ? `${cal.sinceLabel} ${Math.round((new Date(todayISO)-new Date(last))/86400000)} jours`
-        : `${cal.sinceLabel} N/A`;
+      cal.el.sinceText.textContent=last?`${cal.sinceLabel} ${Math.round((new Date(todayISO)-new Date(last))/86400000)} jours`:`${cal.sinceLabel} N/A`;
     };
 
     cal.el.toggleNotesBtn.onclick=()=>{cal.notesVisible=!cal.notesVisible;cal.renderMonthNotes();};
-
-    cal.renderCalendar(); cal.updateSince();
+    cal.renderCalendar();cal.updateSince();
     return cal;
   }
 
-  /* ── Init : charge les defs ou cree les defaults ── */
-  const DEFAULT_DEFS = [
-    {
-      id: 'migraines',
-      title: 'Calendrier des migraines',
-      sinceLabel: 'Nombre de jours depuis votre derniere migraine :',
-      legend: [
-        {label:'RAS',         color:'var(--green)'},
-        {label:'Mal de tete', color:'var(--orange)'},
-        {label:'Migraine',    color:'var(--red)'}
-      ]
-    },
-    {
-      id: 'sommeil',
-      title: 'Suivi sommeil',
-      sinceLabel: 'Nombre de jours depuis votre derniere mauvaise nuit :',
-      legend: [
-        {label:'Bonne nuit',   color:'var(--green)'},
-        {label:'Nuit moyenne', color:'var(--orange)'},
-        {label:'Mauvaise nuit',color:'var(--red)'}
-      ]
-    }
-  ];
-
-  // Migration : ancienne cle localStorage => nouvelle
-  function migrateOldData() {
-    const old = {
-      'suiviSante.migraines': 'suiviSante.days.migraines',
-      'suiviSante.notes.migraines': 'suiviSante.notes.migraines',
-      'suiviSante.sommeil': 'suiviSante.days.sommeil',
-      'suiviSante.notes.sommeil': 'suiviSante.notes.sommeil',
-    };
-    Object.entries(old).forEach(([k,v]) => {
-      if (localStorage.getItem(k) !== null && localStorage.getItem(v) === null) {
-        localStorage.setItem(v, localStorage.getItem(k));
-        localStorage.removeItem(k);
-      }
+  /* ── Migration ── */
+  function migrateOldData(){
+    [['suiviSante.migraines','suiviSante.days.migraines'],['suiviSante.sommeil','suiviSante.days.sommeil']].forEach(([o,n])=>{
+      if(localStorage.getItem(o)!==null&&localStorage.getItem(n)===null){localStorage.setItem(n,localStorage.getItem(o));localStorage.removeItem(o);}
+    });
+    // Migration notes: ancien format string => nouveau format {text, meds:[]}
+    ['migraines','sommeil'].forEach(id=>{
+      const notes=loadLS('suiviSante.notes.'+id)||{};let changed=false;
+      Object.keys(notes).forEach(k=>{if(typeof notes[k]==='string'){notes[k]={text:notes[k],meds:[]};changed=true;}});
+      if(changed)persist('suiviSante.notes.'+id,notes);
     });
   }
   migrateOldData();
 
-  let savedDefs = loadLS(CALS_META_KEY);
-  if (!savedDefs || !Array.isArray(savedDefs) || savedDefs.length === 0) {
-    savedDefs = DEFAULT_DEFS;
-    persist(CALS_META_KEY, savedDefs);
-  }
-
-  globalState.calDefs = savedDefs;
-  savedDefs.forEach(def => {
-    createCalendarDOM(def);
-    const cal = initCalendar(def);
-    globalState.calendars.push(cal);
-  });
+  /* ── Init ── */
+  const DEFAULT_DEFS=[
+    {id:'migraines',title:'Calendrier des migraines',sinceLabel:'Nombre de jours depuis votre dernière migraine :',legend:[{label:'RAS',color:'var(--green)'},{label:'Mal de tête',color:'var(--orange)'},{label:'Migraine',color:'var(--red)'}]},
+    {id:'sommeil',title:'Suivi sommeil',sinceLabel:'Nombre de jours depuis votre dernière mauvaise nuit :',legend:[{label:'Bonne nuit',color:'var(--green)'},{label:'Nuit moyenne',color:'var(--orange)'},{label:'Mauvaise nuit',color:'var(--red)'}]}
+  ];
+  let savedDefs=loadLS(CALS_META_KEY);
+  if(!savedDefs||!Array.isArray(savedDefs)||savedDefs.length===0){savedDefs=DEFAULT_DEFS;persist(CALS_META_KEY,savedDefs);}
+  globalState.calDefs=savedDefs;
+  savedDefs.forEach(def=>{createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);});
 
 })();
 </script>
