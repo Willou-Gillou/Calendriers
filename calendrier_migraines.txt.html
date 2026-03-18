@@ -12,57 +12,74 @@
     --border: #ddd; --day-size: clamp(38px,8vw,64px); --day-radius: 14px; --day-font: clamp(16px,4vw,22px);
   }
   body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
-  .topbar { display: flex; justify-content: center; align-items: center; padding: 14px; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-  .title { font-weight: bold; font-size: 18px; }
-  .container { max-width: 980px; margin: 20px auto; padding: 0 16px; }
 
-  .calendar-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 22px; }
-
-  .calendar-title {
-    font-weight: bold;
-    font-size: 18px;
-    text-align: center;
-    width: 100%;
-    padding: 10px 14px 0;
+  /* ── Topbar ── */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10; gap: 12px; flex-wrap: nowrap;
   }
+  .title { font-weight: bold; font-size: 18px; white-space: nowrap; }
 
-  .calendar-header { padding: 12px 16px; border-bottom: 1px solid #eee; }
-  .header-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap;
+  /* Navigation globale dans la topbar */
+  .global-nav {
+    display: flex; align-items: center; gap: 8px; flex: 1 1 auto; justify-content: center;
   }
-  .left-tools { display:flex; gap:8px; align-items:center; }
-  .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: #f2f4f7; border: 1px solid var(--border); cursor: pointer; }
-  .icon { width: 22px; height: 22px; fill: #333; transition: transform 0.3s ease; }
-  .icon.rotate { transform: rotate(-90deg); }
-
-  .ym-block {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; flex: 1 1 auto; min-width: 110px;
+  .nav-btn, .today-btn {
+    height: 42px; min-width: 42px; border-radius: 10px;
+    border: 1px solid var(--border); background: #f6f7fb; cursor: pointer;
+    font-size: 15px;
   }
-  .ym-year { font-size: 18px; font-weight: bold; line-height: 1.1; }
-  .ym-month { text-transform: uppercase; color: var(--muted); margin-top: 2px; font-size: 12px; line-height: 1.1; }
-
-  .nav { display: flex; gap: 8px; flex: 0 0 auto; justify-content: flex-end; }
-  .nav-btn, .today-btn { height: 42px; min-width: 42px; border-radius: 10px; border: 1px solid var(--border); background: #f6f7fb; cursor: pointer; }
-  .today-btn { padding: 0 12px; background: #fff; }
+  .today-btn { padding: 0 14px; background: #fff; white-space: nowrap; }
+  .ym-global {
+    display: flex; flex-direction: column; align-items: center; min-width: 110px;
+  }
+  .ym-global-year  { font-size: 17px; font-weight: bold; line-height: 1.1; }
+  .ym-global-month { text-transform: uppercase; color: var(--muted); font-size: 12px; margin-top: 1px; }
 
   @media (max-width: 480px) {
-    .header-row { gap: 8px; }
-    .ym-year { font-size: 16px; }
-    .ym-month { font-size: 11px; }
-    .nav-btn, .today-btn { height: 36px; min-width: 36px; }
+    .topbar { padding: 8px 10px; }
+    .title  { font-size: 15px; }
+    .nav-btn, .today-btn { height: 36px; min-width: 36px; font-size: 13px; }
     .today-btn { padding: 0 10px; }
+    .ym-global-year  { font-size: 15px; }
+    .ym-global-month { font-size: 11px; }
   }
 
-  .weekdays { display: grid; grid-template-columns: repeat(7,1fr); text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .container { max-width: 980px; margin: 20px auto; padding: 0 16px; }
+
+  /* ── Cards ── */
+  .calendar-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 22px;
+  }
+
+  /* ── Header de chaque calendrier (titre + bouton menu) ── */
+  .calendar-header { padding: 12px 16px; border-bottom: 1px solid #eee; }
+  .header-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .calendar-title { font-weight: bold; font-size: 18px; flex: 1 1 auto; }
+
+  .icon-btn {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    border-radius: 10px; background: #f2f4f7; border: 1px solid var(--border);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .icon { width: 22px; height: 22px; fill: #333; }
+
+  /* ── Grille ── */
+  .weekdays {
+    display: grid; grid-template-columns: repeat(7,1fr);
+    text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px;
+    padding: 0 16px;
+  }
   .days { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; padding: 16px; }
   .day {
-    height: var(--day-size); border-radius: var(--day-radius); border: 1px solid #ccc; background: #fafafa;
-    display: flex; align-items: center; justify-content: center; font-size: var(--day-font); font-weight: bold;
-    cursor: pointer; position: relative;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-    user-select: none;
+    height: var(--day-size); border-radius: var(--day-radius); border: 1px solid #ccc;
+    background: #fafafa; display: flex; align-items: center; justify-content: center;
+    font-size: var(--day-font); font-weight: bold; cursor: pointer; position: relative;
+    touch-action: manipulation; -webkit-tap-highlight-color: rgba(0,0,0,0); user-select: none;
   }
   .day.today { border: 2px solid var(--accent); }
   .state-0 { background: #e9f9ef; }
@@ -70,12 +87,13 @@
   .state-2 { background: #ffcccc; }
   .day.locked { background: #fff!important; color: #aaa; border-style: dashed; cursor: not-allowed; }
   .day.out { opacity: .4; }
-  
   .note-icon { position: absolute; top: 2px; right: 2px; font-size: 10px; }
 
   .since-line { margin: 14px 16px; font-size: 14px; }
-
-  .legend { font-size: 12px; color: var(--muted); margin: 8px 6px 6px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; text-align: center; }
+  .legend {
+    font-size: 12px; color: var(--muted); margin: 8px 6px 6px;
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .color-box { width: 14px; height: 14px; display: inline-block; border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; }
 
@@ -85,157 +103,229 @@
     background: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   }
   .notes-toggle-btn:hover { background: #f6f7fb; }
+  .notes-list {
+    margin: 14px 16px 20px; padding: 10px; background: #fff;
+    border: 1px solid var(--border); border-radius: 10px; display: none; font-size: 12px;
+  }
 
-  .notes-list { margin: 14px 16px 20px; padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px; display: none; }
+  /* ══════════════════════════════════════════
+     MENU LATÉRAL (drawer)
+  ══════════════════════════════════════════ */
+  .drawer-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+    z-index: 30; display: none;
+  }
+  .drawer-overlay.open { display: block; }
 
-  /* Menu (hamburger) par calendrier */
-  .menu-dropdown { position: absolute; background: #333; border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: none; z-index: 20; width: 260px; color: #fff; box-shadow: 0 8px 18px rgba(0,0,0,0.18); }
-  .menu-dropdown.open { display: block; }
-  .menu-btn { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #444; border: 1px solid var(--border); border-radius: 10px; color: #fff; cursor: pointer; text-align: left; }
-  .menu-input { width: 100%; padding: 10px; margin-top: 8px; border-radius: 10px; border: 1px solid var(--border); background: #222; color: #fff; }
+  .drawer {
+    position: fixed; top: 0; left: 0; height: 100%;
+    width: min(300px, 85vw);
+    background: #1e1e2e; color: #fff;
+    z-index: 35; transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    display: flex; flex-direction: column;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    /* Empêche le débordement global */
+    overflow: hidden;
+  }
+  .drawer.open { transform: translateX(0); }
 
-  /* Modal note */
+  .drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+  .drawer-header-title { font-weight: bold; font-size: 16px; }
+  .drawer-close-btn {
+    background: none; border: none; color: #fff; font-size: 22px;
+    cursor: pointer; line-height: 1; padding: 0 4px;
+  }
+
+  /* Zone scrollable du drawer */
+  .drawer-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+  }
+  .drawer-body::-webkit-scrollbar { width: 4px; }
+  .drawer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+  .drawer-btn {
+    width: 100%; padding: 13px 14px; background: #2d2d44; border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; color: #fff; cursor: pointer; text-align: left;
+    font-size: 14px; transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .drawer-btn:hover { background: #3a3a58; }
+
+  .drawer-label {
+    font-size: 12px; color: rgba(255,255,255,0.55);
+    margin-top: 4px; flex-shrink: 0;
+  }
+
+  /* Input titre : ne déborde pas du drawer */
+  .drawer-input {
+    width: 100%;
+    box-sizing: border-box;          /* ← clé : padding inclus dans la largeur */
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #12121e;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
+    min-width: 0;                    /* évite le dépassement flex */
+  }
+  .drawer-input::placeholder { color: rgba(255,255,255,0.35); }
+
+  /* ══════════════════════════════════════════
+     MODAL NOTE
+  ══════════════════════════════════════════ */
   .note-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.4);
     display: none; z-index: 40;
   }
   .note-backdrop.open { display: block; }
+
   .note-modal {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center;
     z-index: 50; padding: 16px;
+    /* empêche la modal elle-même de déborder */
+    box-sizing: border-box;
   }
   .note-modal.open { display: flex; }
+
   .note-card {
-    width: min(92vw, 520px); background: #fff; border: 1px solid var(--border);
-    border-radius: 12px; box-shadow: 0 12px 28px rgba(0,0,0,0.18); padding: 16px;
+    /* largeur bornée + hauteur bornée */
+    width: min(92vw, 520px);
+    max-height: 90vh;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
   }
-  .note-title { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+  .note-title { font-weight: bold; font-size: 16px; flex-shrink: 0; }
+
   .note-textarea {
-    width: 100%; min-height: 120px; border-radius: 10px; border: 1px solid var(--border);
-    padding: 10px; font-size: 14px; resize: vertical; background: #fff; color: var(--text);
+    /* Occupe l'espace disponible SANS déborder */
+    flex: 1 1 auto;
+    min-height: 80px;
+    max-height: 100%;          /* reste dans .note-card */
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px; border: 1px solid var(--border);
+    padding: 10px; font-size: 14px; resize: vertical;
+    background: #fff; color: var(--text);
+    overflow-y: auto;
   }
-  .note-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .note-actions { display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
   .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; background: #f6f7fb; }
   .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn-danger  { background: #fff0f0; color: #b00020; border-color: #ffd2d2; }
 </style>
 </head>
 <body>
+
+  <!-- ══ TOPBAR avec navigation globale ══ -->
   <header class="topbar">
     <div class="title">Mes Calendriers</div>
+    <nav class="global-nav" aria-label="Navigation globale">
+      <button class="nav-btn" id="globalPrevBtn" aria-label="Mois précédent">◀</button>
+      <div class="ym-global">
+        <div class="ym-global-year"  id="globalYear">—</div>
+        <div class="ym-global-month" id="globalMonth">—</div>
+      </div>
+      <button class="nav-btn" id="globalNextBtn" aria-label="Mois suivant">▶</button>
+      <button class="today-btn" id="globalTodayBtn">Aujourd'hui</button>
+    </nav>
   </header>
 
+  <!-- ══ DRAWER OVERLAY ══ -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- ══ DRAWER (menu latéral unique, contenu injecté par JS) ══ -->
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Options du calendrier">
+    <div class="drawer-header">
+      <span class="drawer-header-title" id="drawerTitle">Options</span>
+      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Fermer le menu">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
   <main class="container">
+
     <!-- ===== MIGRAINES ===== -->
     <section class="calendar-card" id="cardMig">
-      <h2 class="calendar-title" id="calTitleMig">Calendrier des migraines</h2>
       <div class="calendar-header">
         <div class="header-row">
-          <div class="left-tools">
-            <button class="icon-btn" id="menuBtnMig" aria-label="Menu migraines">
-              <svg class="icon" id="menuIconMig" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
-              </svg>
-            </button>
-            <!-- menu ancré ici -->
-            <div class="menu-dropdown" id="menuDropdownMig" role="dialog" aria-modal="true" aria-label="Menu migraines">
-              <button class="menu-btn" id="exportBtnMig">Exporter JSON</button>
-              <button class="menu-btn" id="importBtnMig">Importer JSON</button>
-              <input type="file" id="fileInputMig" accept="application/json" style="display:none;">
-              <button class="menu-btn" id="resetBtnMig">Réinitialiser</button>
-              <label for="titleInputMig">Modifier le titre :</label>
-              <input type="text" id="titleInputMig" class="menu-input" placeholder="Titre du calendrier">
-            </div>
-          </div>
-          <div class="ym-block">
-            <div class="ym-year"  id="ymYearMig">—</div>
-            <div class="ym-month" id="ymMonthMig">—</div>
-          </div>
-          <div class="nav">
-            <button class="nav-btn" id="prevMonthBtnMig" aria-label="Mois précédent">◀</button>
-            <button class="today-btn" id="todayBtnMig">Aujourd'hui</button>
-            <button class="nav-btn" id="nextMonthBtnMig" aria-label="Mois suivant">▶</button>
-          </div>
+          <h2 class="calendar-title" id="calTitleMig">Calendrier des migraines</h2>
+          <button class="icon-btn" id="menuBtnMig" aria-label="Menu migraines">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+            </svg>
+          </button>
         </div>
       </div>
-
       <div class="weekdays">
         <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
       </div>
       <div class="days" id="daysGridMig"></div>
-
       <div class="legend" aria-label="Légende migraines">
-        <div class="legend-item"><span class="color-box" style="background: var(--green);"></span>RAS</div>
-        <div class="legend-item"><span class="color-box" style="background: var(--orange);"></span>Mal de tête</div>
-        <div class="legend-item"><span class="color-box" style="background: var(--red);"></span>Migraine</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--green)"></span>RAS</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--orange)"></span>Mal de tête</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--red)"></span>Migraine</div>
       </div>
-
       <div class="notes-toggle-wrapper">
         <button id="toggleNotesMig" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
       </div>
-
       <p class="since-line" id="sinceTextMig">Nombre de jours depuis votre dernière migraine : N/A</p>
       <div class="notes-list" id="notesListMig"></div>
     </section>
 
     <!-- ===== SOMMEIL ===== -->
     <section class="calendar-card" id="cardSlp">
-      <h2 class="calendar-title" id="calTitleSlp">Suivi sommeil</h2>
       <div class="calendar-header">
         <div class="header-row">
-          <div class="left-tools">
-            <button class="icon-btn" id="menuBtnSlp" aria-label="Menu sommeil">
-              <svg class="icon" id="menuIconSlp" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
-              </svg>
-            </button>
-            <div class="menu-dropdown" id="menuDropdownSlp" role="dialog" aria-modal="true" aria-label="Menu sommeil">
-              <button class="menu-btn" id="exportBtnSlp">Exporter JSON</button>
-              <button class="menu-btn" id="importBtnSlp">Importer JSON</button>
-              <input type="file" id="fileInputSlp" accept="application/json" style="display:none;">
-              <button class="menu-btn" id="resetBtnSlp">Réinitialiser</button>
-              <label for="titleInputSlp">Modifier le titre :</label>
-              <input type="text" id="titleInputSlp" class="menu-input" placeholder="Titre du calendrier">
-            </div>
-          </div>
-          <div class="ym-block">
-            <div class="ym-year"  id="ymYearSlp">—</div>
-            <div class="ym-month" id="ymMonthSlp">—</div>
-          </div>
-          <div class="nav">
-            <button class="nav-btn" id="prevMonthBtnSlp" aria-label="Mois précédent">◀</button>
-            <button class="today-btn" id="todayBtnSlp">Aujourd'hui</button>
-            <button class="nav-btn" id="nextMonthBtnSlp" aria-label="Mois suivant">▶</button>
-          </div>
+          <h2 class="calendar-title" id="calTitleSlp">Suivi sommeil</h2>
+          <button class="icon-btn" id="menuBtnSlp" aria-label="Menu sommeil">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+            </svg>
+          </button>
         </div>
       </div>
-
       <div class="weekdays">
         <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
       </div>
       <div class="days" id="daysGridSlp"></div>
-
       <div class="legend" aria-label="Légende sommeil">
-        <div class="legend-item"><span class="color-box" style="background: var(--green);"></span>Bonne nuit</div>
-        <div class="legend-item"><span class="color-box" style="background: var(--orange);"></span>Nuit moyenne</div>
-        <div class="legend-item"><span class="color-box" style="background: var(--red);"></span>Mauvaise nuit</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--green)"></span>Bonne nuit</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--orange)"></span>Nuit moyenne</div>
+        <div class="legend-item"><span class="color-box" style="background:var(--red)"></span>Mauvaise nuit</div>
       </div>
-
       <div class="notes-toggle-wrapper">
         <button id="toggleNotesSlp" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
       </div>
-
       <p class="since-line" id="sinceTextSlp">Nombre de jours depuis votre dernière mauvaise nuit : N/A</p>
       <div class="notes-list" id="notesListSlp"></div>
     </section>
+
   </main>
 
-  <!-- ===== MODAL NOTE (commun aux deux calendriers) ===== -->
+  <!-- ══ MODAL NOTE (commun) ══ -->
   <div class="note-backdrop" id="noteBackdrop" hidden></div>
-  <div class="note-modal" id="noteModal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle" hidden>
+  <div class="note-modal"    id="noteModal"
+       role="dialog" aria-modal="true" aria-labelledby="noteModalTitle" hidden>
     <div class="note-card" role="document">
       <div class="note-title" id="noteModalTitle">Note</div>
-      <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note..."></textarea>
+      <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note…"></textarea>
       <div class="note-actions">
         <button class="btn btn-danger"  id="noteDeleteBtn" type="button">Supprimer</button>
         <button class="btn"             id="noteCancelBtn" type="button">Annuler</button>
@@ -246,18 +336,177 @@
 
 <script>
 (() => {
-  // ====== Configuration commune ======
-  const LOCK_BEFORE_ISO = '2025-10-06'; // jours avant cette date verrouillés (lecture seule)
+  /* ═══════════════════════════════════════
+     CONFIG & HELPERS
+  ═══════════════════════════════════════ */
+  const LOCK_BEFORE_ISO = '2025-10-06';
   const DOUBLE_DELAY = 280, TAP_MAX = 350, MOVE_TOL = 10;
 
-  // ====== Helpers communs ======
-  function toISO(date) { return date.toISOString().slice(0,10); }
-  function nextState(s) { return [0,1,2][([0,1,2].indexOf(s)+1)%3]; }
-  function applyState(el, s) { el.classList.remove('state-0','state-1','state-2'); el.classList.add('state-' + s); }
-  function persist(key, obj) { localStorage.setItem(key, JSON.stringify(obj)); }
-  function loadData(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } }
+  const toISO      = d => d.toISOString().slice(0,10);
+  const nextState  = s => [0,1,2][([0,1,2].indexOf(s)+1)%3];
+  const applyState = (el, s) => { el.classList.remove('state-0','state-1','state-2'); el.classList.add('state-'+s); };
+  const persist    = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
+  const loadData   = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
 
-  // ====== Modal de note partagé ======
+  /* ═══════════════════════════════════════
+     NAVIGATION GLOBALE (topbar)
+  ═══════════════════════════════════════ */
+  const globalState = {
+    year:  new Date().getFullYear(),
+    month: new Date().getMonth(),
+    calendars: []   // rempli lors de initCalendar
+  };
+
+  function updateGlobalDisplay() {
+    const d = new Date(Date.UTC(globalState.year, globalState.month, 1));
+    document.getElementById('globalYear').textContent  = globalState.year;
+    document.getElementById('globalMonth').textContent =
+      d.toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
+  }
+
+  function globalNav(delta) {
+    globalState.month += delta;
+    if (globalState.month < 0)  { globalState.month = 11; globalState.year--; }
+    if (globalState.month > 11) { globalState.month = 0;  globalState.year++; }
+    updateGlobalDisplay();
+    globalState.calendars.forEach(cal => {
+      cal.current.year  = globalState.year;
+      cal.current.month = globalState.month;
+      cal.renderCalendar(cal.current.year, cal.current.month);
+      if (cal.notesVisible) cal.renderMonthNotes();
+    });
+  }
+
+  document.getElementById('globalPrevBtn').onclick  = () => globalNav(-1);
+  document.getElementById('globalNextBtn').onclick  = () => globalNav(+1);
+  document.getElementById('globalTodayBtn').onclick = () => {
+    globalState.year  = new Date().getFullYear();
+    globalState.month = new Date().getMonth();
+    updateGlobalDisplay();
+    globalState.calendars.forEach(cal => {
+      cal.current.year  = globalState.year;
+      cal.current.month = globalState.month;
+      cal.renderCalendar(cal.current.year, cal.current.month);
+      if (cal.notesVisible) cal.renderMonthNotes();
+    });
+  };
+
+  updateGlobalDisplay();
+
+  /* ═══════════════════════════════════════
+     DRAWER (menu latéral partagé)
+  ═══════════════════════════════════════ */
+  const drawer        = document.getElementById('drawer');
+  const drawerOverlay = document.getElementById('drawerOverlay');
+  const drawerTitle   = document.getElementById('drawerTitle');
+  const drawerBody    = document.getElementById('drawerBody');
+  const drawerCloseBtn= document.getElementById('drawerCloseBtn');
+
+  function openDrawer(cal) {
+    // Titre du drawer
+    drawerTitle.textContent = cal.el.title.textContent;
+
+    // Contenu dynamique
+    drawerBody.innerHTML = '';
+
+    const mkBtn = (label, onClick) => {
+      const b = document.createElement('button');
+      b.className = 'drawer-btn';
+      b.textContent = label;
+      b.onclick = onClick;
+      return b;
+    };
+
+    // Export
+    drawerBody.appendChild(mkBtn('⬇ Exporter JSON', () => {
+      const payload = {};
+      payload[cal.exportDataLabel || 'data'] = cal.data;
+      payload.notes = cal.notes;
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = cal.exportName; a.click();
+      URL.revokeObjectURL(url);
+    }));
+
+    // Import
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.accept = 'application/json';
+    fileInput.style.display = 'none';
+    fileInput.onchange = async () => {
+      const file = fileInput.files[0]; if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        for (const k of Object.keys(cal.data))  delete cal.data[k];
+        for (const k of Object.keys(cal.notes)) delete cal.notes[k];
+        const importedData = parsed[cal.exportDataLabel] || parsed.data || parsed.migraines || parsed.sommeil || {};
+        Object.assign(cal.data,  importedData);
+        Object.assign(cal.notes, parsed.notes || {});
+        persist(cal.keys.data,  cal.data);
+        persist(cal.keys.notes, cal.notes);
+        cal.renderCalendar(cal.current.year, cal.current.month);
+        cal.updateSince();
+        cal.renderMonthNotes();
+      } catch { alert('Import invalide'); }
+      fileInput.value = '';
+    };
+    drawerBody.appendChild(fileInput);
+    drawerBody.appendChild(mkBtn('⬆ Importer JSON', () => fileInput.click()));
+
+    // Reset
+    drawerBody.appendChild(mkBtn('🗑 Réinitialiser', () => {
+      if (!confirm('Réinitialiser toutes les données de ce calendrier ?')) return;
+      for (const k of Object.keys(cal.data))  delete cal.data[k];
+      for (const k of Object.keys(cal.notes)) delete cal.notes[k];
+      persist(cal.keys.data,  cal.data);
+      persist(cal.keys.notes, cal.notes);
+      localStorage.setItem(cal.keys.title, cal.labels.defaultTitle);
+      cal.el.title.textContent = cal.labels.defaultTitle;
+      cal.renderCalendar(cal.current.year, cal.current.month);
+      cal.updateSince();
+      cal.renderMonthNotes();
+      drawerTitle.textContent = cal.labels.defaultTitle;
+      if (titleInput) titleInput.value = cal.labels.defaultTitle;
+    }));
+
+    // Champ titre (box-sizing géré en CSS → ne déborde pas)
+    const lbl = document.createElement('div');
+    lbl.className = 'drawer-label';
+    lbl.textContent = 'Modifier le titre :';
+    drawerBody.appendChild(lbl);
+
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.className = 'drawer-input';
+    titleInput.placeholder = 'Titre du calendrier';
+    titleInput.value = cal.el.title.textContent;
+    titleInput.oninput = () => {
+      const v = titleInput.value.trim() || cal.labels.defaultTitle;
+      cal.el.title.textContent = v;
+      drawerTitle.textContent  = v;
+      localStorage.setItem(cal.keys.title, v);
+    };
+    drawerBody.appendChild(titleInput);
+
+    // Ouverture
+    drawerOverlay.classList.add('open');
+    drawer.classList.add('open');
+    // focus sur le premier bouton
+    setTimeout(() => drawerBody.querySelector('.drawer-btn')?.focus(), 50);
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+  }
+
+  drawerCloseBtn.onclick  = closeDrawer;
+  drawerOverlay.onclick   = closeDrawer;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  /* ═══════════════════════════════════════
+     MODAL NOTE (partagée)
+  ═══════════════════════════════════════ */
   const noteBackdrop = document.getElementById('noteBackdrop');
   const noteModal    = document.getElementById('noteModal');
   const noteTitleEl  = document.getElementById('noteModalTitle');
@@ -266,14 +515,12 @@
   const noteCancelBtn= document.getElementById('noteCancelBtn');
   const noteDeleteBtn= document.getElementById('noteDeleteBtn');
 
-  let activeCal = null; // calendrier actif pour la note
-  let editingISO = null;
+  let activeCal = null, editingISO = null;
 
   function openNoteModal(calendar, iso) {
-    activeCal = calendar;
-    editingISO = iso;
+    activeCal  = calendar; editingISO = iso;
     noteTitleEl.textContent = calendar.labels.noteTitlePrefix + iso;
-    noteTextarea.value = calendar.notes[iso] || '';
+    noteTextarea.value      = calendar.notes[iso] || '';
     document.body.style.overflow = 'hidden';
     noteBackdrop.classList.add('open'); noteModal.classList.add('open');
     noteBackdrop.removeAttribute('hidden'); noteModal.removeAttribute('hidden');
@@ -285,6 +532,7 @@
     document.body.style.overflow = '';
     activeCal = null; editingISO = null;
   }
+
   noteSaveBtn.onclick = () => {
     if (!activeCal || !editingISO) return;
     const val = noteTextarea.value.trim();
@@ -296,154 +544,64 @@
   };
   noteDeleteBtn.onclick = () => {
     if (!activeCal || !editingISO) return;
-    if (activeCal.notes[editingISO]) {
-      delete activeCal.notes[editingISO];
-      persist(activeCal.keys.notes, activeCal.notes);
-      activeCal.renderCalendar(activeCal.current.year, activeCal.current.month);
-      if (activeCal.notesVisible) activeCal.renderMonthNotes();
-    }
+    delete activeCal.notes[editingISO];
+    persist(activeCal.keys.notes, activeCal.notes);
+    activeCal.renderCalendar(activeCal.current.year, activeCal.current.month);
+    if (activeCal.notesVisible) activeCal.renderMonthNotes();
     closeNoteModal();
   };
   noteCancelBtn.onclick = closeNoteModal;
   noteBackdrop.addEventListener('click', closeNoteModal);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && noteModal.classList.contains('open')) closeNoteModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && noteModal.classList.contains('open')) closeNoteModal();
+  });
 
-  // ====== Fabrique de calendrier ======
+  /* ═══════════════════════════════════════
+     FABRIQUE DE CALENDRIER
+  ═══════════════════════════════════════ */
   function initCalendar(cfg) {
     const cal = {
-      keys: cfg.keys,
-      labels: cfg.labels,
-      exportName: cfg.exportName,
-      lockBeforeISO: cfg.lockBeforeISO || LOCK_BEFORE_ISO,
-      data: loadData(cfg.keys.data),
-      notes: loadData(cfg.keys.notes),
-      current: { year: new Date().getFullYear(), month: new Date().getMonth() },
-      notesVisible: false
+      keys:           cfg.keys,
+      labels:         cfg.labels,
+      exportName:     cfg.exportName,
+      exportDataLabel:cfg.exportDataLabel,
+      lockBeforeISO:  cfg.lockBeforeISO || LOCK_BEFORE_ISO,
+      data:           loadData(cfg.keys.data),
+      notes:          loadData(cfg.keys.notes),
+      current:        { year: globalState.year, month: globalState.month },
+      notesVisible:   false
     };
 
-    // Éléments
     cal.el = {
-      title: document.getElementById(cfg.ids.title),
-      titleInput: document.getElementById(cfg.ids.titleInput),
-      ymYear: document.getElementById(cfg.ids.ymYear),
-      ymMonth: document.getElementById(cfg.ids.ymMonth),
-      daysGrid: document.getElementById(cfg.ids.daysGrid),
-      sinceText: document.getElementById(cfg.ids.sinceText),
-      notesList: document.getElementById(cfg.ids.notesList),
-      toggleNotesBtn: document.getElementById(cfg.ids.toggleNotesBtn),
-      prevBtn: document.getElementById(cfg.ids.prevBtn),
-      nextBtn: document.getElementById(cfg.ids.nextBtn),
-      todayBtn: document.getElementById(cfg.ids.todayBtn),
-      menuBtn: document.getElementById(cfg.ids.menuBtn),
-      menuIcon: document.getElementById(cfg.ids.menuIcon),
-      menuDropdown: document.getElementById(cfg.ids.menuDropdown),
-      exportBtn: document.getElementById(cfg.ids.exportBtn),
-      importBtn: document.getElementById(cfg.ids.importBtn),
-      fileInput: document.getElementById(cfg.ids.fileInput),
-      resetBtn: document.getElementById(cfg.ids.resetBtn),
+      title:         document.getElementById(cfg.ids.title),
+      daysGrid:      document.getElementById(cfg.ids.daysGrid),
+      sinceText:     document.getElementById(cfg.ids.sinceText),
+      notesList:     document.getElementById(cfg.ids.notesList),
+      toggleNotesBtn:document.getElementById(cfg.ids.toggleNotesBtn),
+      menuBtn:       document.getElementById(cfg.ids.menuBtn),
     };
 
-    // Titre
+    // Titre initial
     const savedTitle = localStorage.getItem(cfg.keys.title) || cfg.labels.defaultTitle;
     cal.el.title.textContent = savedTitle;
-    cal.el.titleInput.value = savedTitle;
-    cal.el.titleInput.oninput = () => {
-      const newTitle = cal.el.titleInput.value.trim() || cfg.labels.defaultTitle;
-      cal.el.title.textContent = newTitle;
-      localStorage.setItem(cfg.keys.title, newTitle);
-    };
 
-    // Menu
-    cal.el.menuBtn.onclick = (e) => {
-      e.stopPropagation();
-      cal.el.menuDropdown.style.top = `${cal.el.menuBtn.getBoundingClientRect().bottom + window.scrollY + 8}px`;
-      cal.el.menuDropdown.style.left = `${cal.el.menuBtn.getBoundingClientRect().left + window.scrollX}px`;
-      cal.el.menuDropdown.classList.toggle('open');
-      cal.el.menuIcon.classList.toggle('rotate');
-    };
-    document.addEventListener('click', (e) => {
-      if (!cal.el.menuDropdown.contains(e.target) && !cal.el.menuBtn.contains(e.target)) {
-        cal.el.menuDropdown.classList.remove('open');
-        cal.el.menuIcon.classList.remove('rotate');
-      }
-    });
+    // Bouton menu → ouvre le drawer
+    cal.el.menuBtn.onclick = () => openDrawer(cal);
 
-    // Export
-    cal.el.exportBtn.onclick = () => {
-      const payload = {};
-      payload[cfg.exportDataLabel || 'data'] = cal.data;
-      payload.notes = cal.notes;
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = cal.exportName;
-      a.click();
-      URL.revokeObjectURL(url);
-    };
-
-    // Import
-    cal.el.importBtn.onclick = () => cal.el.fileInput.click();
-    cal.el.fileInput.onchange = async () => {
-      const file = cal.el.fileInput.files[0];
-      if (!file) return;
-      const text = await file.text();
-      try {
-        const parsed = JSON.parse(text);
-        for (const k of Object.keys(cal.data)) delete cal.data[k];
-        for (const k of Object.keys(cal.notes)) delete cal.notes[k];
-        // compat : accepte plusieurs clés possibles
-        const importedData =
-          parsed[cfg.exportDataLabel] ||
-          parsed.data ||
-          parsed.migraines || parsed.sommeil || {};
-        Object.assign(cal.data, importedData);
-        Object.assign(cal.notes, parsed.notes || {});
-        persist(cal.keys.data, cal.data);
-        persist(cal.keys.notes, cal.notes);
-        cal.renderCalendar(cal.current.year, cal.current.month);
-        cal.updateSince();
-        cal.renderMonthNotes();
-      } catch {
-        alert('Import invalide');
-      }
-      cal.el.fileInput.value = '';
-    };
-
-    // Reset
-    cal.el.resetBtn.onclick = () => {
-      if (confirm('Réinitialiser toutes les données de ce calendrier ?')) {
-        for (const k of Object.keys(cal.data)) delete cal.data[k];
-        for (const k of Object.keys(cal.notes)) delete cal.notes[k];
-        persist(cal.keys.data, cal.data);
-        persist(cal.keys.notes, cal.notes);
-        localStorage.setItem(cal.keys.title, cfg.labels.defaultTitle);
-        cal.el.title.textContent = cfg.labels.defaultTitle;
-        cal.el.titleInput.value = cfg.labels.defaultTitle;
-        cal.renderCalendar(cal.current.year, cal.current.month);
-        cal.updateSince();
-        cal.renderMonthNotes();
-      }
-    };
-
-    // Rendu du calendrier
-    cal.getState = (iso) => cal.data[iso] ?? 0;
+    // Rendu
+    cal.getState = iso => cal.data[iso] ?? 0;
     cal.setState = (iso, s) => { cal.data[iso] = s; persist(cal.keys.data, cal.data); };
 
     cal.renderCalendar = (year, monthIndex) => {
       const grid = cal.el.daysGrid;
       grid.innerHTML = '';
-      const firstDay = new Date(Date.UTC(year, monthIndex, 1));
-      const lastDay  = new Date(Date.UTC(year, monthIndex + 1, 0));
+      const firstDay    = new Date(Date.UTC(year, monthIndex, 1));
+      const lastDay     = new Date(Date.UTC(year, monthIndex + 1, 0));
       const daysInMonth = lastDay.getUTCDate();
-      cal.el.ymYear.textContent = year;
-      cal.el.ymMonth.textContent = firstDay.toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
+      const todayISO    = toISO(new Date());
+      const startWeekday= (firstDay.getUTCDay() + 6) % 7;
 
-      const startWeekday = (firstDay.getUTCDay() + 6) % 7; // lundi = 0
-      const todayISO = toISO(new Date());
-
-      // cases vides
-      for (let i=0;i<startWeekday;i++) {
+      for (let i=0; i<startWeekday; i++) {
         const div = document.createElement('div');
         div.className = 'day out';
         grid.appendChild(div);
@@ -453,7 +611,6 @@
         const cell = document.createElement('div');
         cell.className = 'day';
         cell.textContent = d;
-
         const iso = toISO(new Date(Date.UTC(year, monthIndex, d)));
         if (iso === todayISO) cell.classList.add('today');
 
@@ -462,164 +619,97 @@
         } else {
           applyState(cell, cal.getState(iso));
 
-          // Gestion tap/double-tap fiable (pointer events)
-          let lastTapTime = 0;
-          let startX=0, startY=0, startTime=0;
-          let singleTimer = null;
-
-          cell.addEventListener('pointerdown', (e) => {
-            startTime = Date.now();
-            startX = e.clientX; startY = e.clientY;
-          });
-
-          cell.addEventListener('pointerup', (e) => {
-            const now = Date.now();
-            const dt = now - startTime;
-            const dx = Math.abs(e.clientX - startX);
-            const dy = Math.abs(e.clientY - startY);
-            if (dt > TAP_MAX || dx > MOVE_TOL || dy > MOVE_TOL) return;
-
-            const isDouble = (now - lastTapTime) < DOUBLE_DELAY;
+          let lastTapTime=0, startX=0, startY=0, startTime=0, singleTimer=null;
+          cell.addEventListener('pointerdown', e => { startTime=Date.now(); startX=e.clientX; startY=e.clientY; });
+          cell.addEventListener('pointerup', e => {
+            const now=Date.now(), dt=now-startTime;
+            const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
+            if (dt>TAP_MAX||dx>MOVE_TOL||dy>MOVE_TOL) return;
+            const isDouble=(now-lastTapTime)<DOUBLE_DELAY;
             if (isDouble) {
-              if (singleTimer) { clearTimeout(singleTimer); singleTimer = null; }
+              if (singleTimer) { clearTimeout(singleTimer); singleTimer=null; }
               openNoteModal(cal, iso);
-              lastTapTime = 0;
+              lastTapTime=0;
             } else {
-              lastTapTime = now;
-              singleTimer = setTimeout(() => {
-                const next = nextState(cal.getState(iso));
-                cal.setState(iso, next);
-                applyState(cell, next);
-                cal.updateSince();
-                singleTimer = null;
+              lastTapTime=now;
+              singleTimer=setTimeout(()=>{
+                const next=nextState(cal.getState(iso));
+                cal.setState(iso,next); applyState(cell,next); cal.updateSince();
+                singleTimer=null;
               }, DOUBLE_DELAY);
             }
           });
-
-          // Fallback desktop
-          cell.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            openNoteModal(cal, iso);
-          });
+          cell.addEventListener('dblclick', e => { e.preventDefault(); openNoteModal(cal, iso); });
         }
 
         if (cal.notes[iso]) {
           const icon = document.createElement('div');
-          icon.className = 'note-icon';
-          icon.textContent = '✎';
+          icon.className='note-icon'; icon.textContent='✎';
           cell.appendChild(icon);
         }
-
         grid.appendChild(cell);
       }
     };
 
     cal.renderMonthNotes = () => {
-      if (!cal.notesVisible) { cal.el.notesList.style.display = 'none'; return; }
-      const monthPrefix = `${cal.current.year}-${String(cal.current.month+1).padStart(2,'0')}`;
-      const monthNotes = Object.entries(cal.notes).filter(([date]) => date.startsWith(monthPrefix)).sort();
-      cal.el.notesList.innerHTML = monthNotes.length === 0
+      if (!cal.notesVisible) { cal.el.notesList.style.display='none'; return; }
+      const prefix = `${cal.current.year}-${String(cal.current.month+1).padStart(2,'0')}`;
+      const entries = Object.entries(cal.notes).filter(([d])=>d.startsWith(prefix)).sort();
+      cal.el.notesList.innerHTML = entries.length===0
         ? '<em>Aucune note pour ce mois.</em>'
-        : '<strong>Notes du mois :</strong><ul>' +
-          monthNotes.map(([date, note]) => `<li><strong>${date}</strong> : ${note}</li>`).join('') +
-          '</ul>';
-      cal.el.notesList.style.display = 'block';
-      cal.el.notesList.style.fontSize = '12px';
+        : '<strong>Notes du mois :</strong><ul>'+
+          entries.map(([d,n])=>`<li><strong>${d}</strong> : ${n}</li>`).join('')+'</ul>';
+      cal.el.notesList.style.display='block';
     };
 
     cal.updateSince = () => {
-      const todayISO = toISO(new Date());
-      let last = null;
-      for (const [iso, val] of Object.entries(cal.data)) {
-        if (val === 2 && iso <= todayISO) { if (!last || iso > last) last = iso; }
+      const todayISO=toISO(new Date()); let last=null;
+      for (const [iso,val] of Object.entries(cal.data)) {
+        if (val===2 && iso<=todayISO) { if (!last||iso>last) last=iso; }
       }
       cal.el.sinceText.textContent = last
-        ? `${cal.labels.sincePrefix} ${Math.round((new Date(todayISO) - new Date(last)) / 86400000)} jours`
+        ? `${cal.labels.sincePrefix} ${Math.round((new Date(todayISO)-new Date(last))/86400000)} jours`
         : `${cal.labels.sincePrefix} N/A`;
     };
 
-    // Navigation
-    cal.el.prevBtn.onclick = () => {
-      cal.current.month--; if (cal.current.month < 0) { cal.current.month = 11; cal.current.year--; }
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      if (cal.notesVisible) cal.renderMonthNotes();
-    };
-    cal.el.nextBtn.onclick = () => {
-      cal.current.month++; if (cal.current.month > 11) { cal.current.month = 0; cal.current.year++; }
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      if (cal.notesVisible) cal.renderMonthNotes();
-    };
-    cal.el.todayBtn.onclick = () => {
-      cal.current.year = new Date().getFullYear(); cal.current.month = new Date().getMonth();
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      if (cal.notesVisible) cal.renderMonthNotes();
-    };
+    cal.el.toggleNotesBtn.onclick = () => { cal.notesVisible=!cal.notesVisible; cal.renderMonthNotes(); };
 
-    cal.el.toggleNotesBtn.onclick = () => { cal.notesVisible = !cal.notesVisible; cal.renderMonthNotes(); };
-
-    // Initialisation
+    // Init
     cal.renderCalendar(cal.current.year, cal.current.month);
     cal.updateSince();
 
+    // Enregistrement dans globalState
+    globalState.calendars.push(cal);
     return cal;
   }
 
-  // ====== Instanciation des deux calendriers ======
-  const calMig = initCalendar({
+  /* ═══════════════════════════════════════
+     INSTANCIATION
+  ═══════════════════════════════════════ */
+  initCalendar({
     ids: {
-      title: 'calTitleMig',
-      titleInput: 'titleInputMig',
-      ymYear: 'ymYearMig', ymMonth: 'ymMonthMig',
-      daysGrid: 'daysGridMig',
-      sinceText: 'sinceTextMig',
-      notesList: 'notesListMig',
-      toggleNotesBtn: 'toggleNotesMig',
-      prevBtn: 'prevMonthBtnMig', nextBtn: 'nextMonthBtnMig', todayBtn: 'todayBtnMig',
-      menuBtn: 'menuBtnMig', menuIcon: 'menuIconMig', menuDropdown: 'menuDropdownMig',
-      exportBtn: 'exportBtnMig', importBtn: 'importBtnMig', fileInput: 'fileInputMig', resetBtn: 'resetBtnMig'
+      title:'calTitleMig', daysGrid:'daysGridMig',
+      sinceText:'sinceTextMig', notesList:'notesListMig',
+      toggleNotesBtn:'toggleNotesMig', menuBtn:'menuBtnMig'
     },
-    keys: {
-      data:  'suiviSante.migraines',
-      notes: 'suiviSante.notes.migraines',
-      title: 'suiviSante.title.migraines'
-    },
-    labels: {
-      defaultTitle: 'Calendrier des migraines',
-      sincePrefix: 'Nombre de jours depuis votre dernière migraine :',
-      noteTitlePrefix: 'Note du '
-    },
-    exportName: 'suivi_migraines.json',
-    exportDataLabel: 'migraines',
+    keys:  { data:'suiviSante.migraines', notes:'suiviSante.notes.migraines', title:'suiviSante.title.migraines' },
+    labels:{ defaultTitle:'Calendrier des migraines', sincePrefix:'Nombre de jours depuis votre dernière migraine :', noteTitlePrefix:'Note du ' },
+    exportName:'suivi_migraines.json', exportDataLabel:'migraines',
     lockBeforeISO: LOCK_BEFORE_ISO
   });
 
-  const calSlp = initCalendar({
+  initCalendar({
     ids: {
-      title: 'calTitleSlp',
-      titleInput: 'titleInputSlp',
-      ymYear: 'ymYearSlp', ymMonth: 'ymMonthSlp',
-      daysGrid: 'daysGridSlp',
-      sinceText: 'sinceTextSlp',
-      notesList: 'notesListSlp',
-      toggleNotesBtn: 'toggleNotesSlp',
-      prevBtn: 'prevMonthBtnSlp', nextBtn: 'nextMonthBtnSlp', todayBtn: 'todayBtnSlp',
-      menuBtn: 'menuBtnSlp', menuIcon: 'menuIconSlp', menuDropdown: 'menuDropdownSlp',
-      exportBtn: 'exportBtnSlp', importBtn: 'importBtnSlp', fileInput: 'fileInputSlp', resetBtn: 'resetBtnSlp'
+      title:'calTitleSlp', daysGrid:'daysGridSlp',
+      sinceText:'sinceTextSlp', notesList:'notesListSlp',
+      toggleNotesBtn:'toggleNotesSlp', menuBtn:'menuBtnSlp'
     },
-    keys: {
-      data:  'suiviSante.sommeil',
-      notes: 'suiviSante.notes.sommeil',
-      title: 'suiviSante.title.sommeil'
-    },
-    labels: {
-      defaultTitle: 'Suivi sommeil',
-      sincePrefix: 'Nombre de jours depuis votre dernière mauvaise nuit :',
-      noteTitlePrefix: 'Note du '
-    },
-    exportName: 'suivi_sommeil.json',
-    exportDataLabel: 'sommeil',
+    keys:  { data:'suiviSante.sommeil', notes:'suiviSante.notes.sommeil', title:'suiviSante.title.sommeil' },
+    labels:{ defaultTitle:'Suivi sommeil', sincePrefix:'Nombre de jours depuis votre dernière mauvaise nuit :', noteTitlePrefix:'Note du ' },
+    exportName:'suivi_sommeil.json', exportDataLabel:'sommeil',
     lockBeforeISO: LOCK_BEFORE_ISO
   });
+
 })();
 </script>
 </body>
