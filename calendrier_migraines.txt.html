@@ -50,7 +50,7 @@
 
   /* Ronds médicaments dans la cellule */
   .day-meds{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:0 2px;}
-  .med-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,0.15);}
+  .med-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;border:1px solid #000;}
 
   /* Icône note (crayon) */
   .note-icon{position:absolute;top:2px;right:3px;font-size:10px;line-height:1;}
@@ -63,7 +63,7 @@
   /* Légende médicaments : rond coloré + nom */
   .legend-meds{font-size:12px;color:var(--muted);margin:2px 8px 8px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .legend-med-item{display:flex;align-items:center;gap:5px;}
-  .legend-med-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,0.15);}
+  .legend-med-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid #000;}
 
   .notes-toggle-wrapper{display:flex;justify-content:center;margin:8px 0 4px;}
   .notes-toggle-btn{padding:8px 14px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
@@ -113,14 +113,14 @@
     border:1px solid var(--border);background:#f6f7fb;cursor:pointer;
     display:flex;align-items:center;gap:6px;transition:all 0.15s;
   }
-  .med-chip .chip-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,0.15);}
+  .med-chip .chip-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid #000;}
   .med-chip.active{border-width:2px;background:#f0f4ff;}
   .med-chip.active .chip-dot{box-shadow:0 0 0 2px rgba(0,0,0,0.2);}
 
   .meds-quick{display:flex;flex-wrap:wrap;gap:6px;}
   .med-quick-btn{padding:5px 12px 5px 8px;border-radius:20px;font-size:13px;border:2px dashed var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;}
   .med-quick-btn:hover{background:#f0f4ff;}
-  .med-quick-btn .chip-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,0.15);}
+  .med-quick-btn .chip-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid #000;}
 
   .note-textarea{flex:1 1 auto;min-height:70px;width:100%;border-radius:10px;border:1px solid var(--border);padding:10px;font-size:14px;resize:vertical;background:#fff;color:var(--text);overflow-y:auto;}
   .note-actions{display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
@@ -615,7 +615,7 @@
       const entries=Object.entries(cal.notes).filter(([d])=>d.startsWith(prefix)).sort();
       cal.el.notesList.innerHTML=entries.length===0?'<em>Aucune note pour ce mois.</em>':
         '<strong>Notes du mois :</strong><ul>'+entries.map(([d,n])=>{
-          const medsStr=n.meds&&n.meds.length?n.meds.map(id=>{const m=medMap[id];return m?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.color};margin-right:3px;vertical-align:middle;"></span>${m.name}`:''}).filter(Boolean).join(', '):'';
+          const medsStr=n.meds&&n.meds.length?n.meds.map(id=>{const m=medMap[id];return m?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.color};border:2px solid #000;margin-right:3px;vertical-align:middle;"></span>${m.name}`:''}).filter(Boolean).join(', '):'';
           return`<li><strong>${d}</strong>${medsStr?' — '+medsStr:''}${n.text?' : '+n.text:''}</li>`;
         }).join('')+'</ul>';
       cal.el.notesList.style.display='block';
