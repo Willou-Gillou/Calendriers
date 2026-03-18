@@ -1,4 +1,3 @@
-<!-- Fichier : Calendriers-Suivi.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,18 +6,26 @@
 <title>Mes Calendriers</title>
 <style>
   :root {
-    --bg: #f4f6fa; --card: #fff; --text: #222; --muted: #666; --accent: #007bff;
+    --bg: #f4f6fa; --text: #222; --muted: #666; --accent: #007bff;
     --green: #28c76f; --orange: #ff7f00; --red: #d60000;
     --border: #ddd; --day-size: clamp(38px,8vw,64px); --day-radius: 14px; --day-font: clamp(16px,4vw,22px);
   }
+  * { box-sizing: border-box; }
   body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
 
+  /* TOPBAR */
   .topbar {
-    display: flex; justify-content: center; align-items: center;
+    display: flex; align-items: center;
     padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
+    position: sticky; top: 0; z-index: 10; gap: 12px;
   }
-  .global-nav { display: flex; align-items: center; gap: 8px; }
+  .menu-toggle-btn {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    border-radius: 10px; background: #f2f4f7; border: 1px solid var(--border);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .menu-toggle-btn svg { width: 22px; height: 22px; fill: #333; }
+  .global-nav { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
   .nav-btn, .today-btn {
     height: 42px; min-width: 42px; border-radius: 10px;
     border: 1px solid var(--border); background: #f6f7fb; cursor: pointer; font-size: 15px;
@@ -27,36 +34,32 @@
   .ym-global { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
   .ym-global-year  { font-size: 17px; font-weight: bold; line-height: 1.1; }
   .ym-global-month { text-transform: uppercase; color: var(--muted); font-size: 12px; margin-top: 1px; }
-
   @media (max-width: 480px) {
-    .topbar { padding: 8px 10px; }
     .nav-btn, .today-btn { height: 36px; min-width: 36px; font-size: 13px; }
     .today-btn { padding: 0 10px; }
-    .ym-global-year  { font-size: 15px; }
-    .ym-global-month { font-size: 11px; }
+    .ym-global-year { font-size: 15px; } .ym-global-month { font-size: 11px; }
   }
 
   .container { max-width: 980px; margin: 20px auto; padding: 0 16px; }
 
+  /* CARDS */
   .calendar-card {
     background: #fff; border: 1px solid var(--border); border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 22px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 22px; position: relative;
   }
-  .calendar-header { padding: 12px 16px; border-bottom: 1px solid #eee; }
-  .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .calendar-title { font-weight: bold; font-size: 18px; flex: 1 1 auto; margin: 0; }
-
-  .icon-btn {
-    width: 44px; height: 44px; display: grid; place-items: center;
-    border-radius: 10px; background: #f2f4f7; border: 1px solid var(--border);
-    cursor: pointer; flex-shrink: 0;
+  .delete-cal-btn {
+    position: absolute; top: 10px; right: 10px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #fff0f0; border: 1px solid #ffd2d2; color: #c00;
+    font-size: 14px; cursor: pointer; display: grid; place-items: center;
+    z-index: 2; line-height: 1;
   }
-  .icon { width: 22px; height: 22px; fill: #333; }
-
+  .delete-cal-btn:hover { background: #ffd2d2; }
+  .calendar-header { padding: 12px 42px 12px 16px; border-bottom: 1px solid #eee; }
+  .calendar-title { font-weight: bold; font-size: 18px; margin: 0; }
   .weekdays {
     display: grid; grid-template-columns: repeat(7,1fr);
-    text-align: center; color: var(--muted); font-size: 14px;
-    margin-top: 8px; padding: 0 16px;
+    text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px; padding: 0 16px;
   }
   .days { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; padding: 16px; }
   .day {
@@ -80,7 +83,6 @@
   }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .color-box { width: 14px; height: 14px; display: inline-block; border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; }
-
   .notes-toggle-wrapper { display: flex; justify-content: center; margin: 10px 0 6px; }
   .notes-toggle-btn {
     padding: 10px 16px; font-size: 14px; border-radius: 10px; border: 1px solid var(--border);
@@ -93,71 +95,75 @@
   }
 
   /* DRAWER */
-  .drawer-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-    z-index: 30; display: none;
-  }
+  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 30; display: none; }
   .drawer-overlay.open { display: block; }
   .drawer {
-    position: fixed; top: 0; left: 0; height: 100%;
-    width: min(300px, 85vw); background: #1e1e2e; color: #fff;
-    z-index: 35; transform: translateX(-100%);
-    transition: transform 0.28s ease;
+    position: fixed; top: 0; left: 0; height: 100%; width: min(320px, 88vw);
+    background: #1e1e2e; color: #fff; z-index: 35;
+    transform: translateX(-100%); transition: transform 0.28s ease;
     display: flex; flex-direction: column;
     box-shadow: 4px 0 20px rgba(0,0,0,0.3); overflow: hidden;
   }
   .drawer.open { transform: translateX(0); }
   .drawer-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
+    padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
   }
   .drawer-header-title { font-weight: bold; font-size: 16px; }
-  .drawer-close-btn {
-    background: none; border: none; color: #fff; font-size: 22px;
-    cursor: pointer; line-height: 1; padding: 0 4px;
-  }
+  .drawer-close-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
   .drawer-body {
     flex: 1 1 auto; overflow-y: auto; padding: 16px;
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; flex-direction: column; gap: 12px;
     scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
   }
   .drawer-body::-webkit-scrollbar { width: 4px; }
   .drawer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+  .drawer-section-title {
+    font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.4);
+    letter-spacing: 0.08em; margin-top: 4px; flex-shrink: 0;
+  }
   .drawer-btn {
-    width: 100%; padding: 13px 14px; background: #2d2d44;
+    width: 100%; padding: 12px 14px; background: #2d2d44;
     border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
     color: #fff; cursor: pointer; text-align: left; font-size: 14px;
     transition: background 0.15s; flex-shrink: 0;
   }
   .drawer-btn:hover { background: #3a3a58; }
-  .drawer-label { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 4px; flex-shrink: 0; }
+  .drawer-btn.danger { background: #3d1a1a; border-color: rgba(255,80,80,0.3); color: #ff8080; }
+  .drawer-btn.danger:hover { background: #5a2020; }
+  .drawer-label { font-size: 12px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
   .drawer-input {
-    width: 100%; box-sizing: border-box; padding: 10px 12px;
-    border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-    background: #12121e; color: #fff; font-size: 14px; flex-shrink: 0; min-width: 0;
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2); background: #12121e;
+    color: #fff; font-size: 14px; flex-shrink: 0; min-width: 0;
   }
   .drawer-input::placeholder { color: rgba(255,255,255,0.35); }
+  .drawer-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 0; flex-shrink: 0; }
+
+  /* Section titres calendriers dans le drawer */
+  .cal-title-row {
+    display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+  }
+  .cal-title-row .drawer-input { flex: 1; }
+  .cal-title-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: -6px; flex-shrink: 0; }
 
   /* MODAL NOTE */
   .note-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 40; }
   .note-backdrop.open { display: block; }
   .note-modal {
-    position: fixed; inset: 0; display: none;
-    align-items: center; justify-content: center;
-    z-index: 50; padding: 16px; box-sizing: border-box;
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 16px;
   }
   .note-modal.open { display: flex; }
   .note-card {
-    width: min(92vw, 520px); max-height: 90vh;
-    background: #fff; border: 1px solid var(--border);
-    border-radius: 12px; box-shadow: 0 12px 28px rgba(0,0,0,0.18);
-    padding: 16px; box-sizing: border-box;
+    width: min(92vw, 520px); max-height: 90vh; background: #fff;
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18); padding: 16px;
     display: flex; flex-direction: column; gap: 10px; overflow: hidden;
   }
   .note-title { font-weight: bold; font-size: 16px; flex-shrink: 0; }
   .note-textarea {
-    flex: 1 1 auto; min-height: 80px; max-height: 100%;
-    width: 100%; box-sizing: border-box;
+    flex: 1 1 auto; min-height: 80px; width: 100%;
     border-radius: 10px; border: 1px solid var(--border);
     padding: 10px; font-size: 14px; resize: vertical;
     background: #fff; color: var(--text); overflow-y: auto;
@@ -166,410 +172,533 @@
   .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; background: #f6f7fb; }
   .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn-danger  { background: #fff0f0; color: #b00020; border-color: #ffd2d2; }
+
+  /* MODAL CONFIRM */
+  .confirm-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 60; }
+  .confirm-backdrop.open { display: block; }
+  .confirm-modal {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    z-index: 70; padding: 16px;
+  }
+  .confirm-modal.open { display: flex; }
+  .confirm-card {
+    width: min(92vw, 420px); background: #fff; border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.22); padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .confirm-title { font-weight: bold; font-size: 17px; }
+  .confirm-msg   { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
 </style>
 </head>
 <body>
 
-  <header class="topbar">
-    <nav class="global-nav" aria-label="Navigation globale">
-      <button class="nav-btn" id="globalPrevBtn" aria-label="Mois pr&eacute;c&eacute;dent">&#9664;</button>
-      <div class="ym-global">
-        <div class="ym-global-year"  id="globalYear">&mdash;</div>
-        <div class="ym-global-month" id="globalMonth">&mdash;</div>
-      </div>
-      <button class="nav-btn" id="globalNextBtn" aria-label="Mois suivant">&#9654;</button>
-      <button class="today-btn" id="globalTodayBtn">Aujourd&apos;hui</button>
-    </nav>
-  </header>
-
-  <div class="drawer-overlay" id="drawerOverlay"></div>
-
-  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Options du calendrier">
-    <div class="drawer-header">
-      <span class="drawer-header-title" id="drawerTitle">Options</span>
-      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Fermer le menu">&#10005;</button>
+<header class="topbar">
+  <button class="menu-toggle-btn" id="globalMenuBtn" aria-label="Menu">
+    <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+  </button>
+  <nav class="global-nav">
+    <button class="nav-btn" id="globalPrevBtn">&#9664;</button>
+    <div class="ym-global">
+      <div class="ym-global-year"  id="globalYear">&mdash;</div>
+      <div class="ym-global-month" id="globalMonth">&mdash;</div>
     </div>
-    <div class="drawer-body" id="drawerBody"></div>
-  </aside>
+    <button class="nav-btn" id="globalNextBtn">&#9654;</button>
+    <button class="today-btn" id="globalTodayBtn">Aujourd'hui</button>
+  </nav>
+</header>
 
-  <main class="container">
+<!-- DRAWER GLOBAL -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true">
+  <div class="drawer-header">
+    <span class="drawer-header-title">Mes Calendriers</span>
+    <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
 
-    <section class="calendar-card" id="cardMig">
-      <div class="calendar-header">
-        <div class="header-row">
-          <h2 class="calendar-title" id="calTitleMig">Calendrier des migraines</h2>
-          <button class="icon-btn" id="menuBtnMig" aria-label="Menu migraines">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="weekdays">
-        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
-      </div>
-      <div class="days" id="daysGridMig"></div>
-      <div class="legend" aria-label="L&eacute;gende migraines">
-        <div class="legend-item"><span class="color-box" style="background:var(--green)"></span>RAS</div>
-        <div class="legend-item"><span class="color-box" style="background:var(--orange)"></span>Mal de t&ecirc;te</div>
-        <div class="legend-item"><span class="color-box" style="background:var(--red)"></span>Migraine</div>
-      </div>
-      <div class="notes-toggle-wrapper">
-        <button id="toggleNotesMig" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
-      </div>
-      <p class="since-line" id="sinceTextMig">Nombre de jours depuis votre derni&egrave;re migraine : N/A</p>
-      <div class="notes-list" id="notesListMig"></div>
-    </section>
+<main class="container" id="mainContainer"></main>
 
-    <section class="calendar-card" id="cardSlp">
-      <div class="calendar-header">
-        <div class="header-row">
-          <h2 class="calendar-title" id="calTitleSlp">Suivi sommeil</h2>
-          <button class="icon-btn" id="menuBtnSlp" aria-label="Menu sommeil">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="weekdays">
-        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
-      </div>
-      <div class="days" id="daysGridSlp"></div>
-      <div class="legend" aria-label="L&eacute;gende sommeil">
-        <div class="legend-item"><span class="color-box" style="background:var(--green)"></span>Bonne nuit</div>
-        <div class="legend-item"><span class="color-box" style="background:var(--orange)"></span>Nuit moyenne</div>
-        <div class="legend-item"><span class="color-box" style="background:var(--red)"></span>Mauvaise nuit</div>
-      </div>
-      <div class="notes-toggle-wrapper">
-        <button id="toggleNotesSlp" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
-      </div>
-      <p class="since-line" id="sinceTextSlp">Nombre de jours depuis votre derni&egrave;re mauvaise nuit : N/A</p>
-      <div class="notes-list" id="notesListSlp"></div>
-    </section>
-
-  </main>
-
-  <div class="note-backdrop" id="noteBackdrop" hidden></div>
-  <div class="note-modal" id="noteModal"
-       role="dialog" aria-modal="true" aria-labelledby="noteModalTitle" hidden>
-    <div class="note-card" role="document">
-      <div class="note-title" id="noteModalTitle">Note</div>
-      <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note..."></textarea>
-      <div class="note-actions">
-        <button class="btn btn-danger"  id="noteDeleteBtn" type="button">Supprimer</button>
-        <button class="btn"             id="noteCancelBtn" type="button">Annuler</button>
-        <button class="btn btn-primary" id="noteSaveBtn"   type="button">Enregistrer</button>
-      </div>
+<!-- MODAL NOTE -->
+<div class="note-backdrop" id="noteBackdrop" hidden></div>
+<div class="note-modal" id="noteModal" role="dialog" aria-modal="true" hidden>
+  <div class="note-card">
+    <div class="note-title" id="noteModalTitle">Note</div>
+    <textarea id="noteTextarea" class="note-textarea" placeholder="Votre note..."></textarea>
+    <div class="note-actions">
+      <button class="btn btn-danger"  id="noteDeleteBtn">Supprimer</button>
+      <button class="btn"             id="noteCancelBtn">Annuler</button>
+      <button class="btn btn-primary" id="noteSaveBtn">Enregistrer</button>
     </div>
   </div>
+</div>
+
+<!-- MODAL CONFIRM -->
+<div class="confirm-backdrop" id="confirmBackdrop"></div>
+<div class="confirm-modal"    id="confirmModal" role="dialog" aria-modal="true">
+  <div class="confirm-card">
+    <div class="confirm-title" id="confirmTitle">Confirmation</div>
+    <div class="confirm-msg"   id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn"           id="confirmCancelBtn">Annuler</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (() => {
   const LOCK_BEFORE_ISO = '2025-10-06';
   const DOUBLE_DELAY = 280, TAP_MAX = 350, MOVE_TOL = 10;
+  const CALS_META_KEY = 'suiviSante.calendars'; // liste des id de calendriers
 
   const toISO      = d => d.toISOString().slice(0,10);
-  const nextState  = s => [0,1,2][([0,1,2].indexOf(s)+1)%3];
+  const nextState  = s => (s + 1) % 3;
   const applyState = (el, s) => { el.classList.remove('state-0','state-1','state-2'); el.classList.add('state-'+s); };
   const persist    = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
-  const loadData   = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
+  const loadLS     = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
 
-  /* Navigation globale */
-  const globalState = { year: new Date().getFullYear(), month: new Date().getMonth(), calendars: [] };
+  /* ── Confirm modal ── */
+  function showConfirm(title, msg) {
+    return new Promise(resolve => {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMsg').textContent   = msg;
+      document.getElementById('confirmBackdrop').classList.add('open');
+      document.getElementById('confirmModal').classList.add('open');
+      const ok  = document.getElementById('confirmOkBtn');
+      const cancel = document.getElementById('confirmCancelBtn');
+      function cleanup(val) {
+        document.getElementById('confirmBackdrop').classList.remove('open');
+        document.getElementById('confirmModal').classList.remove('open');
+        ok.onclick = null; cancel.onclick = null;
+        resolve(val);
+      }
+      ok.onclick     = () => cleanup(true);
+      cancel.onclick = () => cleanup(false);
+    });
+  }
 
+  /* ── GlobalState ── */
+  const globalState = {
+    year: new Date().getFullYear(),
+    month: new Date().getMonth(),
+    calendars: [],   // instances actives
+    calDefs: []      // metadonnees persistees [{id, title, sinceLabel, legend}]
+  };
+
+  function saveCalDefs() {
+    persist(CALS_META_KEY, globalState.calDefs.map(d => ({
+      id: d.id, title: d.title, sinceLabel: d.sinceLabel, legend: d.legend
+    })));
+  }
+
+  /* ── Navigation globale ── */
   function updateGlobalDisplay() {
     const d = new Date(Date.UTC(globalState.year, globalState.month, 1));
     document.getElementById('globalYear').textContent  = globalState.year;
-    document.getElementById('globalMonth').textContent = d.toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
+    document.getElementById('globalMonth').textContent = d.toLocaleString('fr-FR', {month:'long'}).toUpperCase();
   }
-
   function globalNav(delta) {
     globalState.month += delta;
     if (globalState.month < 0)  { globalState.month = 11; globalState.year--; }
     if (globalState.month > 11) { globalState.month = 0;  globalState.year++; }
     updateGlobalDisplay();
     globalState.calendars.forEach(cal => {
-      cal.current.year  = globalState.year;
-      cal.current.month = globalState.month;
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      if (cal.notesVisible) cal.renderMonthNotes();
+      cal.current.year = globalState.year; cal.current.month = globalState.month;
+      cal.renderCalendar(); if (cal.notesVisible) cal.renderMonthNotes();
     });
   }
-
   document.getElementById('globalPrevBtn').onclick  = () => globalNav(-1);
   document.getElementById('globalNextBtn').onclick  = () => globalNav(+1);
   document.getElementById('globalTodayBtn').onclick = () => {
-    globalState.year  = new Date().getFullYear();
-    globalState.month = new Date().getMonth();
+    globalState.year = new Date().getFullYear(); globalState.month = new Date().getMonth();
     updateGlobalDisplay();
     globalState.calendars.forEach(cal => {
-      cal.current.year  = globalState.year;
-      cal.current.month = globalState.month;
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      if (cal.notesVisible) cal.renderMonthNotes();
+      cal.current.year = globalState.year; cal.current.month = globalState.month;
+      cal.renderCalendar(); if (cal.notesVisible) cal.renderMonthNotes();
     });
   };
   updateGlobalDisplay();
 
-  /* Drawer */
-  const drawer         = document.getElementById('drawer');
-  const drawerOverlay  = document.getElementById('drawerOverlay');
-  const drawerTitle    = document.getElementById('drawerTitle');
-  const drawerBody     = document.getElementById('drawerBody');
-  const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+  /* ── Drawer global ── */
+  const drawer        = document.getElementById('drawer');
+  const drawerOverlay = document.getElementById('drawerOverlay');
+  const drawerBody    = document.getElementById('drawerBody');
 
-  function openDrawer(cal) {
-    drawerTitle.textContent = cal.el.title.textContent;
+  function closeDrawer() { drawer.classList.remove('open'); drawerOverlay.classList.remove('open'); }
+  document.getElementById('drawerCloseBtn').onclick = closeDrawer;
+  drawerOverlay.onclick = closeDrawer;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeNoteModal(); } });
+
+  function buildDrawer() {
     drawerBody.innerHTML = '';
 
-    const mkBtn = (label, onClick) => {
-      const b = document.createElement('button');
-      b.className = 'drawer-btn'; b.textContent = label; b.onclick = onClick; return b;
+    const sec = (label) => {
+      const el = document.createElement('div'); el.className = 'drawer-section-title'; el.textContent = label;
+      drawerBody.appendChild(el);
     };
+    const btn = (label, cls, onClick) => {
+      const b = document.createElement('button');
+      b.className = 'drawer-btn' + (cls ? ' '+cls : '');
+      b.textContent = label; b.onclick = onClick;
+      drawerBody.appendChild(b);
+    };
+    const divider = () => { const hr = document.createElement('hr'); hr.className='drawer-divider'; drawerBody.appendChild(hr); };
 
-    drawerBody.appendChild(mkBtn('Exporter JSON', () => {
-      const payload = {};
-      payload[cal.exportDataLabel || 'data'] = cal.data;
-      payload.notes = cal.notes;
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    /* Export global */
+    sec('Export / Import');
+    btn('Exporter tous les calendriers (JSON)', '', () => {
+      const payload = { calendars: globalState.calDefs.map(d => ({id: d.id, title: d.title, sinceLabel: d.sinceLabel, legend: d.legend})), data: {} };
+      globalState.calDefs.forEach(d => {
+        payload.data[d.id] = {
+          days:  loadLS('suiviSante.days.'+d.id)  || {},
+          notes: loadLS('suiviSante.notes.'+d.id) || {}
+        };
+      });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
       const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url; a.download = cal.exportName; a.click();
+      const a = document.createElement('a'); a.href=url; a.download='suivi_sante.json'; a.click();
       URL.revokeObjectURL(url);
-    }));
+    });
 
     const fileInput = document.createElement('input');
-    fileInput.type = 'file'; fileInput.accept = 'application/json'; fileInput.style.display = 'none';
+    fileInput.type='file'; fileInput.accept='application/json'; fileInput.style.display='none';
     fileInput.onchange = async () => {
       const file = fileInput.files[0]; if (!file) return;
       try {
         const parsed = JSON.parse(await file.text());
-        for (const k of Object.keys(cal.data))  delete cal.data[k];
-        for (const k of Object.keys(cal.notes)) delete cal.notes[k];
-        const importedData = parsed[cal.exportDataLabel] || parsed.data || parsed.migraines || parsed.sommeil || {};
-        Object.assign(cal.data, importedData);
-        Object.assign(cal.notes, parsed.notes || {});
-        persist(cal.keys.data, cal.data); persist(cal.keys.notes, cal.notes);
-        cal.renderCalendar(cal.current.year, cal.current.month);
-        cal.updateSince(); cal.renderMonthNotes();
-      } catch { alert('Import invalide'); }
-      fileInput.value = '';
+        const ok = await showConfirm('Importer', 'Remplacer toutes les donnees actuelles par celles du fichier ?');
+        if (!ok) { fileInput.value=''; return; }
+        // Effacer tout
+        globalState.calDefs.forEach(d => {
+          localStorage.removeItem('suiviSante.days.'+d.id);
+          localStorage.removeItem('suiviSante.notes.'+d.id);
+          localStorage.removeItem('suiviSante.title.'+d.id);
+        });
+        localStorage.removeItem(CALS_META_KEY);
+        // Recharger
+        if (parsed.calendars) {
+          persist(CALS_META_KEY, parsed.calendars);
+          parsed.calendars.forEach(def => {
+            const d = parsed.data && parsed.data[def.id];
+            if (d) {
+              persist('suiviSante.days.'+def.id,  d.days  || {});
+              persist('suiviSante.notes.'+def.id, d.notes || {});
+            }
+            if (def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
+          });
+        }
+        location.reload();
+      } catch { alert('Fichier invalide'); }
+      fileInput.value='';
     };
     drawerBody.appendChild(fileInput);
-    drawerBody.appendChild(mkBtn('Importer JSON', () => fileInput.click()));
+    btn('Importer (JSON)', '', () => fileInput.click());
 
-    let titleInputRef = null;
-    drawerBody.appendChild(mkBtn('Reinitialiser', () => {
-      if (!confirm('Reinitialiser toutes les donnees de ce calendrier ?')) return;
-      for (const k of Object.keys(cal.data))  delete cal.data[k];
-      for (const k of Object.keys(cal.notes)) delete cal.notes[k];
-      persist(cal.keys.data, cal.data); persist(cal.keys.notes, cal.notes);
-      localStorage.setItem(cal.keys.title, cal.labels.defaultTitle);
-      cal.el.title.textContent = cal.labels.defaultTitle;
-      drawerTitle.textContent  = cal.labels.defaultTitle;
-      if (titleInputRef) titleInputRef.value = cal.labels.defaultTitle;
-      cal.renderCalendar(cal.current.year, cal.current.month);
-      cal.updateSince(); cal.renderMonthNotes();
-    }));
+    divider();
 
-    const lbl = document.createElement('div');
-    lbl.className = 'drawer-label'; lbl.textContent = 'Modifier le titre :';
-    drawerBody.appendChild(lbl);
+    /* Titres des calendriers */
+    sec('Titres des calendriers');
+    globalState.calDefs.forEach(def => {
+      const row = document.createElement('div'); row.className='cal-title-row';
+      const lbl = document.createElement('div'); lbl.className='cal-title-label'; lbl.textContent=def.id;
 
-    const titleInput = document.createElement('input');
-    titleInput.type = 'text'; titleInput.className = 'drawer-input';
-    titleInput.placeholder = 'Titre du calendrier';
-    titleInput.value = cal.el.title.textContent;
-    titleInput.oninput = () => {
-      const v = titleInput.value.trim() || cal.labels.defaultTitle;
-      cal.el.title.textContent = v; drawerTitle.textContent = v;
-      localStorage.setItem(cal.keys.title, v);
-    };
-    titleInputRef = titleInput;
-    drawerBody.appendChild(titleInput);
+      const inp = document.createElement('input');
+      inp.type='text'; inp.className='drawer-input';
+      inp.value = localStorage.getItem('suiviSante.title.'+def.id) || def.title;
+      inp.placeholder = def.title;
+      inp.oninput = () => {
+        const v = inp.value.trim() || def.title;
+        localStorage.setItem('suiviSante.title.'+def.id, v);
+        const cal = globalState.calendars.find(c => c.id === def.id);
+        if (cal) { cal.el.title.textContent = v; }
+      };
+      drawerBody.appendChild(lbl);
+      drawerBody.appendChild(inp);
+    });
 
-    drawerOverlay.classList.add('open'); drawer.classList.add('open');
+    divider();
+
+    /* Ajouter un calendrier */
+    sec('Nouveau calendrier');
+    const newTitleInp = document.createElement('input');
+    newTitleInp.type='text'; newTitleInp.className='drawer-input';
+    newTitleInp.placeholder='Titre du nouveau calendrier';
+    drawerBody.appendChild(newTitleInp);
+
+    const newSinceInp = document.createElement('input');
+    newSinceInp.type='text'; newSinceInp.className='drawer-input';
+    newSinceInp.placeholder='Libelle "depuis" (ex: Depuis la derniere crise)';
+    drawerBody.appendChild(newSinceInp);
+
+    btn('Ajouter ce calendrier', '', () => {
+      const t = newTitleInp.value.trim();
+      if (!t) { alert('Veuillez saisir un titre.'); return; }
+      const id = 'cal_' + Date.now();
+      const def = {
+        id,
+        title: t,
+        sinceLabel: newSinceInp.value.trim() || 'Nombre de jours depuis le dernier evenement :',
+        legend: [
+          {label:'Bon',    color:'var(--green)'},
+          {label:'Moyen',  color:'var(--orange)'},
+          {label:'Mauvais',color:'var(--red)'}
+        ]
+      };
+      globalState.calDefs.push(def);
+      saveCalDefs();
+      localStorage.setItem('suiviSante.title.'+id, t);
+      createCalendarDOM(def);
+      const cal = initCalendar(def);
+      globalState.calendars.push(cal);
+      newTitleInp.value=''; newSinceInp.value='';
+      buildDrawer();
+      closeDrawer();
+    });
+
+    divider();
+
+    /* Reset global */
+    sec('Zone dangereuse');
+    btn('Reinitialiser TOUS les calendriers', 'danger', async () => {
+      const ok = await showConfirm('Reinitialiser tout', 'Effacer toutes les donnees de tous les calendriers ? Cette action est irreversible (sauf import).');
+      if (!ok) return;
+      globalState.calDefs.forEach(d => {
+        localStorage.removeItem('suiviSante.days.'+d.id);
+        localStorage.removeItem('suiviSante.notes.'+d.id);
+      });
+      globalState.calendars.forEach(cal => { cal.data={}; cal.notes={}; cal.renderCalendar(); cal.updateSince(); cal.renderMonthNotes(); });
+      closeDrawer();
+    });
+  }
+
+  document.getElementById('globalMenuBtn').onclick = () => {
+    buildDrawer();
+    drawer.classList.add('open'); drawerOverlay.classList.add('open');
     setTimeout(() => drawerBody.querySelector('.drawer-btn')?.focus(), 50);
+  };
+
+  /* ── DOM d'une card calendrier ── */
+  function createCalendarDOM(def) {
+    const container = document.getElementById('mainContainer');
+    const section = document.createElement('section');
+    section.className = 'calendar-card'; section.id = 'card_'+def.id;
+
+    section.innerHTML = `
+      <button class="delete-cal-btn" id="delBtn_${def.id}" title="Supprimer ce calendrier">&#10005;</button>
+      <div class="calendar-header">
+        <h2 class="calendar-title" id="calTitle_${def.id}">${localStorage.getItem('suiviSante.title.'+def.id)||def.title}</h2>
+      </div>
+      <div class="weekdays">
+        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+      </div>
+      <div class="days" id="daysGrid_${def.id}"></div>
+      <div class="legend">
+        ${(def.legend||[]).map(l=>`<div class="legend-item"><span class="color-box" style="background:${l.color}"></span>${l.label}</div>`).join('')}
+      </div>
+      <div class="notes-toggle-wrapper">
+        <button id="toggleNotes_${def.id}" class="notes-toggle-btn" type="button">Afficher / Cacher les notes du mois</button>
+      </div>
+      <p class="since-line" id="sinceText_${def.id}">N/A</p>
+      <div class="notes-list" id="notesList_${def.id}"></div>
+    `;
+    container.appendChild(section);
+
+    // Bouton supprimer
+    document.getElementById('delBtn_'+def.id).onclick = async () => {
+      const title = document.getElementById('calTitle_'+def.id).textContent;
+      const ok = await showConfirm('Supprimer le calendrier', `Supprimer "${title}" et toutes ses donnees ? Il pourra etre restaure via un import JSON.`);
+      if (!ok) return;
+      // Suppr localStorage
+      localStorage.removeItem('suiviSante.days.'+def.id);
+      localStorage.removeItem('suiviSante.notes.'+def.id);
+      localStorage.removeItem('suiviSante.title.'+def.id);
+      // Suppr de globalState
+      globalState.calDefs = globalState.calDefs.filter(d => d.id !== def.id);
+      globalState.calendars = globalState.calendars.filter(c => c.id !== def.id);
+      saveCalDefs();
+      section.remove();
+    };
   }
 
-  function closeDrawer() {
-    drawer.classList.remove('open'); drawerOverlay.classList.remove('open');
-  }
-  drawerCloseBtn.onclick = closeDrawer;
-  drawerOverlay.onclick  = closeDrawer;
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-
-  /* Modal note */
+  /* ── Modal note ── */
   const noteBackdrop = document.getElementById('noteBackdrop');
   const noteModal    = document.getElementById('noteModal');
   const noteTitleEl  = document.getElementById('noteModalTitle');
   const noteTextarea = document.getElementById('noteTextarea');
-  const noteSaveBtn  = document.getElementById('noteSaveBtn');
-  const noteCancelBtn= document.getElementById('noteCancelBtn');
-  const noteDeleteBtn= document.getElementById('noteDeleteBtn');
   let activeCal = null, editingISO = null;
 
-  function openNoteModal(calendar, iso) {
-    activeCal = calendar; editingISO = iso;
-    noteTitleEl.textContent = calendar.labels.noteTitlePrefix + iso;
-    noteTextarea.value      = calendar.notes[iso] || '';
-    document.body.style.overflow = 'hidden';
+  function openNoteModal(cal, iso) {
+    activeCal=cal; editingISO=iso;
+    noteTitleEl.textContent = 'Note du ' + iso;
+    noteTextarea.value = cal.notes[iso] || '';
+    document.body.style.overflow='hidden';
     noteBackdrop.classList.add('open'); noteModal.classList.add('open');
     noteBackdrop.removeAttribute('hidden'); noteModal.removeAttribute('hidden');
-    setTimeout(() => noteTextarea.focus(), 0);
+    setTimeout(()=>noteTextarea.focus(),0);
   }
   function closeNoteModal() {
     noteBackdrop.classList.remove('open'); noteModal.classList.remove('open');
     noteBackdrop.setAttribute('hidden',''); noteModal.setAttribute('hidden','');
-    document.body.style.overflow = '';
-    activeCal = null; editingISO = null;
+    document.body.style.overflow=''; activeCal=null; editingISO=null;
   }
 
-  noteSaveBtn.onclick = () => {
-    if (!activeCal || !editingISO) return;
+  document.getElementById('noteSaveBtn').onclick = () => {
+    if (!activeCal||!editingISO) return;
     const val = noteTextarea.value.trim();
-    if (val === '') delete activeCal.notes[editingISO]; else activeCal.notes[editingISO] = val;
-    persist(activeCal.keys.notes, activeCal.notes);
-    activeCal.renderCalendar(activeCal.current.year, activeCal.current.month);
-    if (activeCal.notesVisible) activeCal.renderMonthNotes();
+    if (val==='') delete activeCal.notes[editingISO]; else activeCal.notes[editingISO]=val;
+    persist('suiviSante.notes.'+activeCal.id, activeCal.notes);
+    activeCal.renderCalendar(); if (activeCal.notesVisible) activeCal.renderMonthNotes();
     closeNoteModal();
   };
-  noteDeleteBtn.onclick = () => {
-    if (!activeCal || !editingISO) return;
+  document.getElementById('noteDeleteBtn').onclick = async () => {
+    if (!activeCal||!editingISO) return;
+    const ok = await showConfirm('Supprimer la note', `Supprimer la note du ${editingISO} ?`);
+    if (!ok) return;
     delete activeCal.notes[editingISO];
-    persist(activeCal.keys.notes, activeCal.notes);
-    activeCal.renderCalendar(activeCal.current.year, activeCal.current.month);
-    if (activeCal.notesVisible) activeCal.renderMonthNotes();
+    persist('suiviSante.notes.'+activeCal.id, activeCal.notes);
+    activeCal.renderCalendar(); if (activeCal.notesVisible) activeCal.renderMonthNotes();
     closeNoteModal();
   };
-  noteCancelBtn.onclick = closeNoteModal;
+  document.getElementById('noteCancelBtn').onclick = closeNoteModal;
   noteBackdrop.addEventListener('click', closeNoteModal);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && noteModal.classList.contains('open')) closeNoteModal();
-  });
 
-  /* Fabrique */
-  function initCalendar(cfg) {
+  /* ── Fabrique calendrier ── */
+  function initCalendar(def) {
     const cal = {
-      keys: cfg.keys, labels: cfg.labels,
-      exportName: cfg.exportName, exportDataLabel: cfg.exportDataLabel,
-      lockBeforeISO: cfg.lockBeforeISO || LOCK_BEFORE_ISO,
-      data:  loadData(cfg.keys.data),
-      notes: loadData(cfg.keys.notes),
+      id: def.id,
+      sinceLabel: def.sinceLabel,
+      data:  loadLS('suiviSante.days.'+def.id)  || {},
+      notes: loadLS('suiviSante.notes.'+def.id) || {},
       current: { year: globalState.year, month: globalState.month },
-      notesVisible: false
+      notesVisible: false,
+      el: {
+        title:          document.getElementById('calTitle_'+def.id),
+        daysGrid:       document.getElementById('daysGrid_'+def.id),
+        sinceText:      document.getElementById('sinceText_'+def.id),
+        notesList:      document.getElementById('notesList_'+def.id),
+        toggleNotesBtn: document.getElementById('toggleNotes_'+def.id),
+      }
     };
-
-    cal.el = {
-      title:          document.getElementById(cfg.ids.title),
-      daysGrid:       document.getElementById(cfg.ids.daysGrid),
-      sinceText:      document.getElementById(cfg.ids.sinceText),
-      notesList:      document.getElementById(cfg.ids.notesList),
-      toggleNotesBtn: document.getElementById(cfg.ids.toggleNotesBtn),
-      menuBtn:        document.getElementById(cfg.ids.menuBtn),
-    };
-
-    const savedTitle = localStorage.getItem(cfg.keys.title) || cfg.labels.defaultTitle;
-    cal.el.title.textContent = savedTitle;
-    cal.el.menuBtn.onclick = () => openDrawer(cal);
 
     cal.getState = iso => cal.data[iso] ?? 0;
-    cal.setState = (iso, s) => { cal.data[iso] = s; persist(cal.keys.data, cal.data); };
+    cal.setState = (iso, s) => { cal.data[iso]=s; persist('suiviSante.days.'+cal.id, cal.data); };
 
-    cal.renderCalendar = (year, monthIndex) => {
-      const grid = cal.el.daysGrid;
-      grid.innerHTML = '';
-      const firstDay     = new Date(Date.UTC(year, monthIndex, 1));
-      const lastDay      = new Date(Date.UTC(year, monthIndex + 1, 0));
-      const daysInMonth  = lastDay.getUTCDate();
-      const todayISO     = toISO(new Date());
-      const startWeekday = (firstDay.getUTCDay() + 6) % 7;
+    cal.renderCalendar = () => {
+      const {year, month} = cal.current;
+      const grid = cal.el.daysGrid; grid.innerHTML='';
+      const firstDay = new Date(Date.UTC(year, month, 1));
+      const daysInMonth = new Date(Date.UTC(year, month+1, 0)).getUTCDate();
+      const todayISO = toISO(new Date());
+      const startWeekday = (firstDay.getUTCDay()+6)%7;
 
-      for (let i=0; i<startWeekday; i++) {
-        const div = document.createElement('div'); div.className = 'day out'; grid.appendChild(div);
+      for (let i=0;i<startWeekday;i++) {
+        const d=document.createElement('div'); d.className='day out'; grid.appendChild(d);
       }
-      for (let d=1; d<=daysInMonth; d++) {
-        const cell = document.createElement('div'); cell.className = 'day'; cell.textContent = d;
-        const iso = toISO(new Date(Date.UTC(year, monthIndex, d)));
-        if (iso === todayISO) cell.classList.add('today');
-
-        if (iso > todayISO || iso < cal.lockBeforeISO) {
+      for (let d=1;d<=daysInMonth;d++) {
+        const cell=document.createElement('div'); cell.className='day'; cell.textContent=d;
+        const iso=toISO(new Date(Date.UTC(year,month,d)));
+        if (iso===todayISO) cell.classList.add('today');
+        if (iso>todayISO||iso<LOCK_BEFORE_ISO) {
           cell.classList.add('locked');
         } else {
           applyState(cell, cal.getState(iso));
-          let lastTapTime=0, startX=0, startY=0, startTime=0, singleTimer=null;
-          cell.addEventListener('pointerdown', e => { startTime=Date.now(); startX=e.clientX; startY=e.clientY; });
-          cell.addEventListener('pointerup', e => {
-            const now=Date.now(), dt=now-startTime;
-            const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
-            if (dt>TAP_MAX||dx>MOVE_TOL||dy>MOVE_TOL) return;
-            const isDouble=(now-lastTapTime)<DOUBLE_DELAY;
-            if (isDouble) {
-              if (singleTimer) { clearTimeout(singleTimer); singleTimer=null; }
-              openNoteModal(cal, iso); lastTapTime=0;
-            } else {
-              lastTapTime=now;
-              singleTimer=setTimeout(()=>{
-                const next=nextState(cal.getState(iso));
-                cal.setState(iso,next); applyState(cell,next); cal.updateSince(); singleTimer=null;
-              }, DOUBLE_DELAY);
-            }
+          let lastTap=0,sx=0,sy=0,st=0,timer=null;
+          cell.addEventListener('pointerdown',e=>{st=Date.now();sx=e.clientX;sy=e.clientY;});
+          cell.addEventListener('pointerup',e=>{
+            const now=Date.now(),dt=now-st;
+            const dx=Math.abs(e.clientX-sx),dy=Math.abs(e.clientY-sy);
+            if(dt>TAP_MAX||dx>MOVE_TOL||dy>MOVE_TOL)return;
+            const isDouble=(now-lastTap)<DOUBLE_DELAY;
+            if(isDouble){if(timer){clearTimeout(timer);timer=null;}openNoteModal(cal,iso);lastTap=0;}
+            else{lastTap=now;timer=setTimeout(()=>{const n=nextState(cal.getState(iso));cal.setState(iso,n);applyState(cell,n);cal.updateSince();timer=null;},DOUBLE_DELAY);}
           });
-          cell.addEventListener('dblclick', e => { e.preventDefault(); openNoteModal(cal, iso); });
+          cell.addEventListener('dblclick',e=>{e.preventDefault();openNoteModal(cal,iso);});
         }
         if (cal.notes[iso]) {
-          const icon = document.createElement('div'); icon.className='note-icon'; icon.textContent='\u270e';
-          cell.appendChild(icon);
+          const ic=document.createElement('div');ic.className='note-icon';ic.textContent='\u270e';cell.appendChild(ic);
         }
         grid.appendChild(cell);
       }
     };
 
     cal.renderMonthNotes = () => {
-      if (!cal.notesVisible) { cal.el.notesList.style.display='none'; return; }
-      const prefix  = `${cal.current.year}-${String(cal.current.month+1).padStart(2,'0')}`;
-      const entries = Object.entries(cal.notes).filter(([d])=>d.startsWith(prefix)).sort();
-      cal.el.notesList.innerHTML = entries.length===0
-        ? '<em>Aucune note pour ce mois.</em>'
-        : '<strong>Notes du mois :</strong><ul>'+
-          entries.map(([d,n])=>`<li><strong>${d}</strong> : ${n}</li>`).join('')+'</ul>';
+      if (!cal.notesVisible){cal.el.notesList.style.display='none';return;}
+      const prefix=`${cal.current.year}-${String(cal.current.month+1).padStart(2,'0')}`;
+      const entries=Object.entries(cal.notes).filter(([d])=>d.startsWith(prefix)).sort();
+      cal.el.notesList.innerHTML=entries.length===0
+        ?'<em>Aucune note pour ce mois.</em>'
+        :'<strong>Notes du mois :</strong><ul>'+entries.map(([d,n])=>`<li><strong>${d}</strong> : ${n}</li>`).join('')+'</ul>';
       cal.el.notesList.style.display='block';
     };
 
     cal.updateSince = () => {
       const todayISO=toISO(new Date()); let last=null;
-      for (const [iso,val] of Object.entries(cal.data)) {
-        if (val===2 && iso<=todayISO) { if (!last||iso>last) last=iso; }
-      }
+      for(const[iso,val]of Object.entries(cal.data)){if(val===2&&iso<=todayISO){if(!last||iso>last)last=iso;}}
       cal.el.sinceText.textContent = last
-        ? `${cal.labels.sincePrefix} ${Math.round((new Date(todayISO)-new Date(last))/86400000)} jours`
-        : `${cal.labels.sincePrefix} N/A`;
+        ? `${cal.sinceLabel} ${Math.round((new Date(todayISO)-new Date(last))/86400000)} jours`
+        : `${cal.sinceLabel} N/A`;
     };
 
-    cal.el.toggleNotesBtn.onclick = () => { cal.notesVisible=!cal.notesVisible; cal.renderMonthNotes(); };
+    cal.el.toggleNotesBtn.onclick=()=>{cal.notesVisible=!cal.notesVisible;cal.renderMonthNotes();};
 
-    cal.renderCalendar(cal.current.year, cal.current.month);
-    cal.updateSince();
-    globalState.calendars.push(cal);
+    cal.renderCalendar(); cal.updateSince();
     return cal;
   }
 
-  /* Instanciation */
-  initCalendar({
-    ids: { title:'calTitleMig', daysGrid:'daysGridMig', sinceText:'sinceTextMig',
-           notesList:'notesListMig', toggleNotesBtn:'toggleNotesMig', menuBtn:'menuBtnMig' },
-    keys:   { data:'suiviSante.migraines', notes:'suiviSante.notes.migraines', title:'suiviSante.title.migraines' },
-    labels: { defaultTitle:'Calendrier des migraines', sincePrefix:'Nombre de jours depuis votre derniere migraine :', noteTitlePrefix:'Note du ' },
-    exportName:'suivi_migraines.json', exportDataLabel:'migraines', lockBeforeISO: LOCK_BEFORE_ISO
-  });
+  /* ── Init : charge les defs ou cree les defaults ── */
+  const DEFAULT_DEFS = [
+    {
+      id: 'migraines',
+      title: 'Calendrier des migraines',
+      sinceLabel: 'Nombre de jours depuis votre derniere migraine :',
+      legend: [
+        {label:'RAS',         color:'var(--green)'},
+        {label:'Mal de tete', color:'var(--orange)'},
+        {label:'Migraine',    color:'var(--red)'}
+      ]
+    },
+    {
+      id: 'sommeil',
+      title: 'Suivi sommeil',
+      sinceLabel: 'Nombre de jours depuis votre derniere mauvaise nuit :',
+      legend: [
+        {label:'Bonne nuit',   color:'var(--green)'},
+        {label:'Nuit moyenne', color:'var(--orange)'},
+        {label:'Mauvaise nuit',color:'var(--red)'}
+      ]
+    }
+  ];
 
-  initCalendar({
-    ids: { title:'calTitleSlp', daysGrid:'daysGridSlp', sinceText:'sinceTextSlp',
-           notesList:'notesListSlp', toggleNotesBtn:'toggleNotesSlp', menuBtn:'menuBtnSlp' },
-    keys:   { data:'suiviSante.sommeil', notes:'suiviSante.notes.sommeil', title:'suiviSante.title.sommeil' },
-    labels: { defaultTitle:'Suivi sommeil', sincePrefix:'Nombre de jours depuis votre derniere mauvaise nuit :', noteTitlePrefix:'Note du ' },
-    exportName:'suivi_sommeil.json', exportDataLabel:'sommeil', lockBeforeISO: LOCK_BEFORE_ISO
+  // Migration : ancienne cle localStorage => nouvelle
+  function migrateOldData() {
+    const old = {
+      'suiviSante.migraines': 'suiviSante.days.migraines',
+      'suiviSante.notes.migraines': 'suiviSante.notes.migraines',
+      'suiviSante.sommeil': 'suiviSante.days.sommeil',
+      'suiviSante.notes.sommeil': 'suiviSante.notes.sommeil',
+    };
+    Object.entries(old).forEach(([k,v]) => {
+      if (localStorage.getItem(k) !== null && localStorage.getItem(v) === null) {
+        localStorage.setItem(v, localStorage.getItem(k));
+        localStorage.removeItem(k);
+      }
+    });
+  }
+  migrateOldData();
+
+  let savedDefs = loadLS(CALS_META_KEY);
+  if (!savedDefs || !Array.isArray(savedDefs) || savedDefs.length === 0) {
+    savedDefs = DEFAULT_DEFS;
+    persist(CALS_META_KEY, savedDefs);
+  }
+
+  globalState.calDefs = savedDefs;
+  savedDefs.forEach(def => {
+    createCalendarDOM(def);
+    const cal = initCalendar(def);
+    globalState.calendars.push(cal);
   });
 
 })();
