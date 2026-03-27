@@ -246,6 +246,32 @@
   </div>
 </div>
 
+<!-- PICK CALENDAR MODAL -->
+<div class="pick-backdrop" id="pickBackdrop"></div>
+<div class="pick-modal" id="pickModal" role="dialog" aria-modal="true">
+  <div class="pick-card">
+    <div class="pick-title">Choisir un calendrier</div>
+    <div class="pick-list" id="pickList"></div>
+    <button class="pick-cancel" id="pickCancelBtn">Annuler</button>
+  </div>
+</div>
+
+<!-- RAPPORT 6 MOIS MODAL -->
+<div class="report-backdrop" id="reportBackdrop"></div>
+<div class="report-modal" id="reportModal" role="dialog" aria-modal="true">
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-title" id="reportTitle">Rapport – 6 derniers mois</div>
+      <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
+    </div>
+    <div class="report-grid" id="reportGrid"></div>
+    <div class="report-notes-section">
+      <div class="report-notes-title">Notes des 6 derniers mois</div>
+      <div class="report-notes-list" id="reportNotesList"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
   'use strict';
@@ -816,32 +842,6 @@
   savedDefs.forEach(def=>{createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);});
 })();
 </script>
-
-<!-- PICK CALENDAR MODAL -->
-<div class="pick-backdrop" id="pickBackdrop"></div>
-<div class="pick-modal" id="pickModal" role="dialog" aria-modal="true">
-  <div class="pick-card">
-    <div class="pick-title">Choisir un calendrier</div>
-    <div class="pick-list" id="pickList"></div>
-    <button class="pick-cancel" id="pickCancelBtn">Annuler</button>
-  </div>
-</div>
-
-<!-- RAPPORT 6 MOIS MODAL -->
-<div class="report-backdrop" id="reportBackdrop"></div>
-<div class="report-modal" id="reportModal" role="dialog" aria-modal="true">
-  <div class="report-card">
-    <div class="report-header">
-      <div class="report-title" id="reportTitle">Rapport – 6 derniers mois</div>
-      <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
-    </div>
-    <div class="report-grid" id="reportGrid"></div>
-    <div class="report-notes-section">
-      <div class="report-notes-title">Notes des 6 derniers mois</div>
-      <div class="report-notes-list" id="reportNotesList"></div>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
