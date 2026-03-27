@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.05</title>
+<title>Mes Calendriers Santé v3.06</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -211,17 +211,6 @@
     .report-grid{max-width:100%!important;width:100%!important;}
     .report-month-block{max-width:100%!important;width:100%!important;}
   }
-
-.newcal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:32;display:none;}
-.newcal-backdrop.open{display:block;}
-.newcal-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:33;padding:16px;}
-.newcal-modal.open{display:flex;}
-.newcal-card{width:min(94vw,380px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
-.newcal-title{font-weight:bold;font-size:16px;}
-.newcal-row{display:flex;flex-direction:column;gap:4px;}
-.newcal-label{font-size:13px;color:var(--muted);}
-.newcal-input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;}
-.newcal-actions{display:flex;gap:8px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -244,7 +233,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.05</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.06</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -936,47 +925,6 @@
 
     html2pdf().set(opt).from(clonedReport).save();
   }
-
-let editingCal=null;
-function openNewCalModal(def=null){
-  editingCal=def;
-  document.getElementById('newcalTitle').value=def?localStorage.getItem('suiviSante.title.'+def.id)||def.title:'';
-  document.getElementById('newcalSince').value=def?def.sinceLabel:'';
-  document.getElementById('newcalTitleText').textContent=def?'Modifier':'Nouveau';
-  document.getElementById('newcalCreate').textContent=def?'Modifier':'Créer';
-  document.getElementById('newcalCreate').onclick=def?()=>updateCal(def):createNewCal;
-  document.getElementById('newcalBackdrop').classList.add('open');
-  document.getElementById('newcalModal').classList.add('open');
-}
-function closeNewCalModal(){
-  document.getElementById('newcalBackdrop').classList.remove('open');
-  document.getElementById('newcalModal').classList.remove('open');
-}
-
-function createNewCal(){
-  const t=document.getElementById('newcalTitle').value.trim();
-  if(!t)return alert('Titre requis');
-  const id='cal_'+Date.now();
-  const def={id,title:t,sinceLabel:document.getElementById('newcalSince').value.trim()||'Nombre de jours',legend:[{label:'Bon',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}]};
-  globalState.calDefs.push(def);saveCalDefs();localStorage.setItem('suiviSante.title.'+id,t);
-  createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);
-  closeNewCalModal();
-}
-
-function updateCal(def){
-  const title=document.getElementById('newcalTitle').value.trim()||def.title;
-  const since=document.getElementById('newcalSince').value.trim()||def.sinceLabel;
-  localStorage.setItem('suiviSante.title.'+def.id,title);
-  def.sinceLabel=since;
-  const cal=globalState.calendars.find(c=>c.id===def.id);
-  if(cal)cal.el.title.textContent=title;
-  closeNewCalModal();
-}
-
-document.getElementById('newcalCancel').onclick=closeNewCalModal;
-document.getElementById('newcalBackdrop').onclick=closeNewCalModal;
-
-
 function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
     document.getElementById('reportModal').classList.remove('open');
@@ -1012,23 +960,5 @@ function closeReport(){
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<div class="newcal-backdrop" id="newcalBackdrop"></div>
-<div class="newcal-modal" id="newcalModal">
-  <div class="newcal-card">
-    <div class="newcal-title" id="newcalTitleText">Nouveau calendrier</div>
-    <div class="newcal-row">
-      <div class="newcal-label">Titre</div>
-      <input type="text" id="newcalTitle" class="newcal-input">
-    </div>
-    <div class="newcal-row">
-      <div class="newcal-label">Libellé "depuis"</div>
-      <input type="text" id="newcalSince" class="newcal-input">
-    </div>
-    <div class="newcal-actions">
-      <button class="btn" id="newcalCancel">Annuler</button>
-      <button class="btn btn-primary" id="newcalCreate">Créer</button>
-    </div>
-  </div>
-</div></body>
+</body>
 </html>
