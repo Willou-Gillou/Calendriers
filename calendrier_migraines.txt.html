@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers v2.14</title>
+<title>Mes Calendriers v2.15</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -884,14 +884,14 @@
     clonedReport.querySelectorAll('.no-print').forEach(el=>el.remove());
 
     const opt={
-      margin:isMobile ? [10,10,10,10] : [10,5,10,5],  // Réduire marges gauche/droite paysage
+      margin:isMobile ? [10,10,10,10] : [10,5,10,5],
       filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
       image:{type:'jpeg',quality:0.98},
       html2canvas:{
         scale:2,
         useCORS:true,
         allowTaint:true,
-        width:1200,  // Largeur fixe pour éviter zoom bizarre
+        width:1200,
         height:800
       },
       jsPDF:{
