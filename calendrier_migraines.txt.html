@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers v2_17</title>
+<title>Mes Calendriers v2.18</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -233,7 +233,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers</span>
+    <span class="drawer-header-title">Mes Calendriers v2.18</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -883,7 +883,7 @@
     const clonedReport=element.cloneNode(true);
     clonedReport.querySelectorAll('.no-print').forEach(el=>el.remove());
 
-    // CORRECTION MOSAÏQUE MOBILE : 2 colonnes pleine largeur
+    // Optimiser mosaïque + légende + notes mobile
     if(isMobile){
       const grid=clonedReport.querySelector('.report-grid');
       if(grid){
@@ -895,6 +895,14 @@
       clonedReport.querySelectorAll('.report-days').forEach(days=>{
         days.style.cssText='gap:2px;';
       });
+
+      // S'assurer que légende et notes sont visibles
+      const legend=clonedReport.querySelector('.report-meds-legend');
+      if(legend) legend.style.cssText='width:100%;margin-top:10px;display:block!important;';
+      const notesSection=clonedReport.querySelector('.report-notes-section');
+      if(notesSection){
+        notesSection.style.cssText='display:block!important;width:100%;page-break-before:always;margin-top:20px;padding-top:12px;';
+      }
     }
 
     const opt={
