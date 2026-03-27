@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers v2.15</title>
+<title>Mes Calendriers v2.16</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -883,15 +883,26 @@
     const clonedReport=element.cloneNode(true);
     clonedReport.querySelectorAll('.no-print').forEach(el=>el.remove());
 
+    // Optimiser mosaïque mobile pour pleine largeur
+    if(isMobile){
+      const grid=clonedReport.querySelector('.report-grid');
+      if(grid){
+        grid.style.cssText='display:flex;flex-direction:column;width:100%;gap:4px;';
+      }
+      clonedReport.querySelectorAll('.report-month-block').forEach(block=>{
+        block.style.cssText='width:100%;padding:6px;display:flex;flex-direction:column;gap:2px;page-break-inside:avoid;';
+      });
+    }
+
     const opt={
       margin:isMobile ? [10,10,10,10] : [10,5,10,5],
       filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
       image:{type:'jpeg',quality:0.98},
       html2canvas:{
-        scale:2,
+        scale:isMobile ? 1.8 : 2,
         useCORS:true,
         allowTaint:true,
-        width:1200,
+        width:isMobile ? 900 : 1200,
         height:800
       },
       jsPDF:{
