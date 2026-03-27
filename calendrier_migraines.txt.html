@@ -181,6 +181,21 @@
   .pick-item:hover{background:#e8f0fe;}
   .pick-cancel{padding:9px 13px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:#f6f7fb;font-size:13px;align-self:flex-end;}
 
+
+
+  .pick-checkbox-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .pick-checkbox-row input[type="checkbox"]{width:18px;height:18px;cursor:pointer;}
+  .pick-checkbox-row label{cursor:pointer;font-size:14px;}
+
+  .report-meds-legend{border-top:1px solid var(--border);margin-top:16px;padding-top:12px;}
+  .report-meds-legend-title{font-weight:bold;font-size:14px;margin-bottom:8px;}
+  .report-meds-legend-items{display:flex;flex-wrap:wrap;gap:12px;}
+  .report-med-legend-item{display:flex;align-items:center;gap:6px;font-size:13px;}
+  .report-med-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid #000;}
+
+  .report-pdf-btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:15px;transition:background 0.15s;}
+  .report-pdf-btn:hover{background:#0056cc;}
+
 </style>
 </head>
 <body>
@@ -252,6 +267,10 @@
   <div class="pick-card">
     <div class="pick-title">Choisir un calendrier</div>
     <div class="pick-list" id="pickList"></div>
+    <div class="pick-checkbox-row">
+      <input type="checkbox" id="pickIncludeNotes" checked />
+      <label for="pickIncludeNotes">Inclure les notes</label>
+    </div>
     <button class="pick-cancel" id="pickCancelBtn">Annuler</button>
   </div>
 </div>
@@ -262,7 +281,10 @@
   <div class="report-card">
     <div class="report-header">
       <div class="report-title" id="reportTitle">Rapport – 6 derniers mois</div>
-      <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
+      <div style="display:flex;gap:8px;">
+        <button class="report-pdf-btn" id="reportPdfBtn">📥 Sauvegarder en PDF</button>
+        <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
+      </div>
     </div>
     <div class="report-grid" id="reportGrid"></div>
     <div class="report-notes-section">
@@ -400,7 +422,7 @@
 
     /* Rapport 6 mois */
     sec('Rapports');
-    btn('Rapport 6 derniers mois','',()=>{closeDrawer();setTimeout(()=>openPickModal((id,title)=>openReport(id,title)),200);});
+    btn('Rapport 6 derniers mois','',()=>{closeDrawer();setTimeout(()=>openPickModal((id,title,includeNotes)=>openReport(id,title,includeNotes)),200);});
     divider();
 
     /* Titres */
@@ -712,10 +734,12 @@
   function openPickModal(onPick){
     const list=document.getElementById('pickList');
     list.innerHTML='';
+    const checkbox=document.getElementById('pickIncludeNotes');
+    checkbox.checked=true;
     globalState.calDefs.forEach(def=>{
       const title=localStorage.getItem('suiviSante.title.'+def.id)||def.title;
       const btn=document.createElement('button');btn.className='pick-item';btn.textContent=title;
-      btn.onclick=()=>{closePick();onPick(def.id,title);};
+      btn.onclick=()=>{closePick();onPick(def.id,title,checkbox.checked);};
       list.appendChild(btn);
     });
     document.getElementById('pickBackdrop').classList.add('open');
@@ -728,7 +752,7 @@
   document.getElementById('pickCancelBtn').onclick=closePick;
   document.getElementById('pickBackdrop').onclick=closePick;
 
-  function openReport(calId, calTitle){
+  function openReport(calId, calTitle, includeNotes=true){
     const cal=globalState.calendars.find(c=>c.id===calId);
     if(!cal)return;
     const meds=loadMeds(calId);const medMap={};meds.forEach(m=>medMap[m.id]=m);
@@ -788,8 +812,29 @@
       grid.appendChild(block);
     });
 
-    // Render notes chronologically
+    // Render meds legend
+    const medsLegendDiv=document.getElementById('reportNotesList').parentElement;
+    const legendDiv=document.createElement('div');legendDiv.className='report-meds-legend';
+    if(meds.length>0){
+      legendDiv.innerHTML='<div class="report-meds-legend-title">Légende médicaments :</div>';
+      const itemsDiv=document.createElement('div');itemsDiv.className='report-meds-legend-items';
+      meds.forEach(med=>{
+        const item=document.createElement('div');item.className='report-med-legend-item';
+        const dot=document.createElement('span');dot.className='report-med-legend-dot';dot.style.background=med.color;
+        const label=document.createElement('span');label.textContent=med.name;
+        item.appendChild(dot);item.appendChild(label);
+        itemsDiv.appendChild(item);
+      });
+      legendDiv.appendChild(itemsDiv);
+    }
+
+    // Render notes chronologically (if enabled)
     const notesList=document.getElementById('reportNotesList');
+    if(!includeNotes){
+      notesList.innerHTML='<em>Notes non incluses.</em>';
+      medsLegendDiv.appendChild(legendDiv);
+      return;
+    }
     // Collect all ISO dates in the 6 month range
     const startDate=toISO(new Date(Date.UTC(months[0].year,months[0].month,1)));
     const endDate=toISO(new Date(Date.UTC(months[5].year,months[5].month+1,0)));
@@ -804,11 +849,34 @@
         return`<li><strong>${d}</strong>${medsStr?' — '+medsStr:''}${n.text?' : '+n.text:''}</li>`;
       }).join('')+'</ul>';
     }
+    medsLegendDiv.appendChild(legendDiv);
 
     document.body.style.overflow='hidden';
     document.getElementById('reportBackdrop').classList.add('open');
     document.getElementById('reportModal').classList.add('open');
   }
+
+
+  /* ── PDF Export ── */
+  function generatePDF(){
+    const element=document.getElementById('reportModal').querySelector('.report-card');
+    const title=document.getElementById('reportTitle').textContent;
+
+    // Create a copy for PDF to avoid modifying the actual report
+    const clonedReport=element.cloneNode(true);
+
+    const opt={
+      margin:[15,10],
+      filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2},
+      jsPDF:{orientation:'landscape',unit:'mm',format:'a4'}
+    };
+
+    html2pdf().set(opt).from(clonedReport).save();
+  }
+
+  document.getElementById('reportPdfBtn').onclick=generatePDF;
 
   function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
@@ -843,5 +911,7 @@
 })();
 </script>
 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>
