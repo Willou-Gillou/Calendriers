@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers v2.11b</title>
+<title>Mes Calendriers v2.12</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -872,43 +872,19 @@
     function generatePDF(){
     const element=document.getElementById('reportModal').querySelector('.report-card');
     const title=document.getElementById('reportTitle').textContent;
-    const isMobile=/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-
     const clonedReport=element.cloneNode(true);
     clonedReport.querySelectorAll('.no-print').forEach(el=>el.remove());
 
-    if(isMobile){
-      const grid=clonedReport.querySelector('.report-grid');
-      if(grid) grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;';
-      clonedReport.querySelectorAll('.report-month-block').forEach(b=>{
-        b.style.cssText='page-break-inside:avoid;padding:4px;border:1px solid #ddd;border-radius:6px;background:#fafbff;';
-      });
-      clonedReport.querySelectorAll('.report-day').forEach(d=>{
-        d.style.cssText='font-size:8px;height:16px;border-radius:3px;border:0.5px solid #ccc;display:flex;align-items:center;justify-content:center;font-weight:bold;';
-      });
-      clonedReport.querySelectorAll('.report-weekdays').forEach(w=>w.style.fontSize='8px');
-      const win=window.open('','_blank');
-      win.document.write('<html><head><meta charset="UTF-8"><title>'+title+'</title>'+
-        '<style>@page{size:portrait;margin:10mm;}body{margin:0;font-family:Arial,sans-serif;}'+
-        '.report-notes-section{page-break-before:always;padding-top:12px;}'+
-        '.report-meds-legend{margin-top:10px;padding:8px;border-top:1px solid #ddd;}'+
-        '</style></head><body>');
-      win.document.write(clonedReport.outerHTML);
-      win.document.write('</body></html>');
-      win.document.close();
-      win.focus();
-      setTimeout(()=>{win.print();},400);
-    }else{
-      const opt={
-        margin:[10,10,10,10],
-        filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
-        image:{type:'jpeg',quality:0.98},
-        html2canvas:{scale:2,useCORS:true,allowTaint:true},
-        jsPDF:{orientation:'landscape',unit:'mm',format:'a4'},
-        pagebreak:{mode:['avoid-all','css','legacy']}
-      };
-      html2pdf().set(opt).from(clonedReport).save();
-    }
+    const opt={
+      margin:[10,10,10,10],
+      filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,allowTaint:true},
+      jsPDF:{orientation:'portrait',unit:'mm',format:'a4'},
+      pagebreak:{mode:['avoid-all','css','legacy']}
+    };
+
+    html2pdf().set(opt).from(clonedReport).save();
   }
 function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
