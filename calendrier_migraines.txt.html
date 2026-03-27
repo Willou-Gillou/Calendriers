@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers</title>
+<title>Mes Calendriers v2.1</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -919,21 +919,7 @@
       html2pdf().set(opt).from(clonedReport).save();
     }
   }
-    const title=document.getElementById('reportTitle').textContent;
-    const clonedReport=element.cloneNode(true);
-    const buttonsToRemove=clonedReport.querySelectorAll('.no-print');
-    buttonsToRemove.forEach(btn=>btn.remove());
-    const opt={
-      margin:[10,10,10,10],
-      filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true},
-      jsPDF:{orientation:'landscape',unit:'mm',format:'a4'},
-      pagebreak:{mode:['avoid-all','css','legacy']}
-    };
-    html2pdf().set(opt).from(clonedReport).save();
-  }
-
+ 
 function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
     document.getElementById('reportModal').classList.remove('open');
