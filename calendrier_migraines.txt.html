@@ -137,6 +137,50 @@
   .confirm-title{font-weight:bold;font-size:16px;}
   .confirm-msg{font-size:13px;color:var(--muted);line-height:1.5;}
   .confirm-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+  /* ── RAPPORT 6 MOIS ── */
+  .report-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:80;display:none;}
+  .report-backdrop.open{display:block;}
+  .report-modal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;z-index:90;padding:16px;overflow-y:auto;}
+  .report-modal.open{display:flex;}
+  .report-card{width:min(98vw,1100px);background:#fff;border-radius:16px;box-shadow:0 12px 36px rgba(0,0,0,0.22);padding:24px;display:flex;flex-direction:column;gap:20px;margin:auto;}
+  .report-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .report-title{font-size:20px;font-weight:bold;}
+  .report-close-btn{background:#f2f4f7;border:1px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:15px;}
+  .report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media(max-width:700px){.report-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:440px){.report-grid{grid-template-columns:1fr;}}
+  .report-month-block{border:1px solid var(--border);border-radius:12px;padding:10px;background:#fafbff;}
+  .report-month-label{font-weight:bold;font-size:14px;text-align:center;margin-bottom:6px;text-transform:capitalize;color:var(--accent);}
+  .report-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-size:10px;margin-bottom:2px;}
+  .report-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .report-day{height:clamp(22px,5vw,30px);border-radius:6px;border:1px solid #ccc;background:#fafafa;display:flex;align-items:center;justify-content:center;font-size:clamp(9px,2.5vw,12px);font-weight:bold;position:relative;}
+  .report-day.out{opacity:.3;}
+  .report-day.rstate-0{background:#e9f9ef;}
+  .report-day.rstate-1{background:#ffe0b3;}
+  .report-day.rstate-2{background:#ffcccc;}
+  .report-day.rtoday{border:2px solid var(--accent);}
+  .report-day.rnote::after{content:'✎';position:absolute;top:0;right:1px;font-size:7px;line-height:1;}
+  .report-day-meds{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;position:absolute;bottom:1px;}
+  .report-med-dot{width:5px;height:5px;border-radius:50%;border:1px solid #000;}
+  .report-notes-section{border-top:1px solid var(--border);padding-top:12px;}
+  .report-notes-title{font-weight:bold;font-size:15px;margin-bottom:8px;}
+  .report-notes-list{font-size:13px;line-height:1.6;}
+  .report-notes-list ul{margin:0;padding-left:18px;}
+  .report-notes-list li{margin-bottom:4px;}
+
+  /* Modal choix calendrier */
+  .pick-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:85;display:none;}
+  .pick-backdrop.open{display:block;}
+  .pick-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:95;padding:16px;}
+  .pick-modal.open{display:flex;}
+  .pick-card{width:min(94vw,360px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
+  .pick-title{font-weight:bold;font-size:16px;}
+  .pick-list{display:flex;flex-direction:column;gap:8px;}
+  .pick-item{padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#f6f7fb;cursor:pointer;font-size:14px;text-align:left;}
+  .pick-item:hover{background:#e8f0fe;}
+  .pick-cancel{padding:9px 13px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:#f6f7fb;font-size:13px;align-self:flex-end;}
+
 </style>
 </head>
 <body>
@@ -326,6 +370,11 @@
     };
     drawerBody.appendChild(fi);
     btn('Importer (JSON)','',()=>fi.click());
+    divider();
+
+    /* Rapport 6 mois */
+    sec('Rapports');
+    btn('Rapport 6 derniers mois','',()=>{closeDrawer();setTimeout(()=>openPickModal((id,title)=>openReport(id,title)),200);});
     divider();
 
     /* Titres */
@@ -632,6 +681,117 @@
     return cal;
   }
 
+
+  /* ── Rapport 6 mois ── */
+  function openPickModal(onPick){
+    const list=document.getElementById('pickList');
+    list.innerHTML='';
+    globalState.calDefs.forEach(def=>{
+      const title=localStorage.getItem('suiviSante.title.'+def.id)||def.title;
+      const btn=document.createElement('button');btn.className='pick-item';btn.textContent=title;
+      btn.onclick=()=>{closePick();onPick(def.id,title);};
+      list.appendChild(btn);
+    });
+    document.getElementById('pickBackdrop').classList.add('open');
+    document.getElementById('pickModal').classList.add('open');
+  }
+  function closePick(){
+    document.getElementById('pickBackdrop').classList.remove('open');
+    document.getElementById('pickModal').classList.remove('open');
+  }
+  document.getElementById('pickCancelBtn').onclick=closePick;
+  document.getElementById('pickBackdrop').onclick=closePick;
+
+  function openReport(calId, calTitle){
+    const cal=globalState.calendars.find(c=>c.id===calId);
+    if(!cal)return;
+    const meds=loadMeds(calId);const medMap={};meds.forEach(m=>medMap[m.id]=m);
+    const todayISO=toISO(new Date());
+    const today=new Date();
+
+    // Build list of 6 months ending at current month
+    const months=[];
+    for(let i=5;i>=0;i--){
+      let y=today.getFullYear(), m=today.getMonth()-i;
+      if(m<0){m+=12;y--;}
+      months.push({year:y,month:m});
+    }
+
+    // Render title
+    document.getElementById('reportTitle').textContent='Rapport 6 derniers mois — '+calTitle;
+
+    // Render grid
+    const grid=document.getElementById('reportGrid');
+    grid.innerHTML='';
+    const FR_MONTHS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    const LOCK=LOCK_BEFORE_ISO;
+
+    months.forEach(({year,month})=>{
+      const block=document.createElement('div');block.className='report-month-block';
+      const label=document.createElement('div');label.className='report-month-label';
+      label.textContent=FR_MONTHS[month]+' '+year;block.appendChild(label);
+      const wd=document.createElement('div');wd.className='report-weekdays';
+      ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].forEach(d=>{const s=document.createElement('div');s.textContent=d;wd.appendChild(s);});
+      block.appendChild(wd);
+      const daysDiv=document.createElement('div');daysDiv.className='report-days';
+      const firstDay=new Date(Date.UTC(year,month,1));
+      const daysInMonth=new Date(Date.UTC(year,month+1,0)).getUTCDate();
+      const startWeekday=(firstDay.getUTCDay()+6)%7;
+      for(let i=0;i<startWeekday;i++){const e=document.createElement('div');e.className='report-day out';daysDiv.appendChild(e);}
+      for(let d=1;d<=daysInMonth;d++){
+        const iso=toISO(new Date(Date.UTC(year,month,d)));
+        const cell=document.createElement('div');cell.className='report-day';
+        if(iso===todayISO)cell.classList.add('rtoday');
+        if(iso>todayISO||iso<LOCK){/* no color */}
+        else{
+          const s=cal.data[iso]??0;
+          if(s>0)cell.classList.add('rstate-'+s);
+        }
+        const noteData=cal.notes[iso];
+        if(noteData&&noteData.text)cell.classList.add('rnote');
+        const takenMeds=noteData&&noteData.meds?noteData.meds.map(id=>medMap[id]).filter(Boolean):[];
+        const numSpan=document.createElement('span');numSpan.textContent=d;cell.appendChild(numSpan);
+        if(takenMeds.length>0){
+          const medsDiv=document.createElement('div');medsDiv.className='report-day-meds';
+          takenMeds.forEach(med=>{const dot=document.createElement('span');dot.className='report-med-dot';dot.style.background=med.color;medsDiv.appendChild(dot);});
+          cell.appendChild(medsDiv);
+        }
+        daysDiv.appendChild(cell);
+      }
+      block.appendChild(daysDiv);
+      grid.appendChild(block);
+    });
+
+    // Render notes chronologically
+    const notesList=document.getElementById('reportNotesList');
+    // Collect all ISO dates in the 6 month range
+    const startDate=toISO(new Date(Date.UTC(months[0].year,months[0].month,1)));
+    const endDate=toISO(new Date(Date.UTC(months[5].year,months[5].month+1,0)));
+    const entries=Object.entries(cal.notes)
+      .filter(([d])=>d>=startDate&&d<=endDate)
+      .sort((a,b)=>a[0]>b[0]?1:-1);
+    if(entries.length===0){
+      notesList.innerHTML='<em>Aucune note sur cette période.</em>';
+    }else{
+      notesList.innerHTML='<ul>'+entries.map(([d,n])=>{
+        const medsStr=n.meds&&n.meds.length?n.meds.map(id=>{const m=medMap[id];return m?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.color};border:1px solid #000;margin-right:3px;vertical-align:middle;"></span>${m.name}`:''}).filter(Boolean).join(', '):'';
+        return`<li><strong>${d}</strong>${medsStr?' — '+medsStr:''}${n.text?' : '+n.text:''}</li>`;
+      }).join('')+'</ul>';
+    }
+
+    document.body.style.overflow='hidden';
+    document.getElementById('reportBackdrop').classList.add('open');
+    document.getElementById('reportModal').classList.add('open');
+  }
+
+  function closeReport(){
+    document.getElementById('reportBackdrop').classList.remove('open');
+    document.getElementById('reportModal').classList.remove('open');
+    document.body.style.overflow='';
+  }
+  document.getElementById('reportCloseBtn').onclick=closeReport;
+  document.getElementById('reportBackdrop').onclick=closeReport;
+
   /* ── Migration ── */
   function migrateOldData(){
     [['suiviSante.migraines','suiviSante.days.migraines'],['suiviSante.sommeil','suiviSante.days.sommeil']].forEach(([o,n])=>{
@@ -656,5 +816,32 @@
   savedDefs.forEach(def=>{createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);});
 })();
 </script>
+
+<!-- PICK CALENDAR MODAL -->
+<div class="pick-backdrop" id="pickBackdrop"></div>
+<div class="pick-modal" id="pickModal" role="dialog" aria-modal="true">
+  <div class="pick-card">
+    <div class="pick-title">Choisir un calendrier</div>
+    <div class="pick-list" id="pickList"></div>
+    <button class="pick-cancel" id="pickCancelBtn">Annuler</button>
+  </div>
+</div>
+
+<!-- RAPPORT 6 MOIS MODAL -->
+<div class="report-backdrop" id="reportBackdrop"></div>
+<div class="report-modal" id="reportModal" role="dialog" aria-modal="true">
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-title" id="reportTitle">Rapport – 6 derniers mois</div>
+      <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
+    </div>
+    <div class="report-grid" id="reportGrid"></div>
+    <div class="report-notes-section">
+      <div class="report-notes-title">Notes des 6 derniers mois</div>
+      <div class="report-notes-list" id="reportNotesList"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
