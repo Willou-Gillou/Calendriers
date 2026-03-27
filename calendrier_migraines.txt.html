@@ -196,7 +196,16 @@
   .report-pdf-btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:15px;transition:background 0.15s;}
   .report-pdf-btn:hover{background:#0056cc;}
 
-</style>
+
+
+  /* Print styles for PDF */
+  @media print{
+    .no-print{display:none!important;}
+    .report-grid{page-break-after:avoid;}
+    .report-meds-legend{page-break-after:avoid;page-break-inside:avoid;}
+    .report-notes-section{page-break-before:always;}
+    body{background:white;}
+  }</style>
 </head>
 <body>
 
@@ -279,15 +288,15 @@
 <div class="report-backdrop" id="reportBackdrop"></div>
 <div class="report-modal" id="reportModal" role="dialog" aria-modal="true">
   <div class="report-card">
-    <div class="report-header">
+    <div class="report-header" style="page-break-after:avoid;">
       <div class="report-title" id="reportTitle">Rapport – 6 derniers mois</div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;" class="no-print">
         <button class="report-pdf-btn" id="reportPdfBtn">📥 Sauvegarder en PDF</button>
         <button class="report-close-btn" id="reportCloseBtn">✕ Fermer</button>
       </div>
     </div>
-    <div class="report-grid" id="reportGrid"></div>
-    <div class="report-notes-section">
+    <div class="report-grid" id="reportGrid" style="page-break-after:avoid;"></div>
+    <div class="report-notes-section" style="page-break-before:always;">
       <div class="report-notes-title">Notes des 6 derniers mois</div>
       <div class="report-notes-list" id="reportNotesList"></div>
     </div>
@@ -812,8 +821,11 @@
       grid.appendChild(block);
     });
 
-    // Render meds legend
-    const medsLegendDiv=document.getElementById('reportNotesList').parentElement;
+    // Render meds legend AFTER grid (on same page as mosaïque)
+    const reportGridContainer=grid.parentElement;
+    const existingLegend=reportGridContainer.querySelector('.report-meds-legend');
+    if(existingLegend)existingLegend.remove();
+
     const legendDiv=document.createElement('div');legendDiv.className='report-meds-legend';
     if(meds.length>0){
       legendDiv.innerHTML='<div class="report-meds-legend-title">Légende médicaments :</div>';
@@ -827,63 +839,60 @@
       });
       legendDiv.appendChild(itemsDiv);
     }
+    reportGridContainer.insertBefore(legendDiv, reportGridContainer.querySelector('.report-notes-section'));
 
-    // Render notes chronologically (if enabled)
+    // Render notes section (on page 2 if enabled)
     const notesList=document.getElementById('reportNotesList');
+    const notesSection=document.getElementById('reportNotesList').parentElement;
+
     if(!includeNotes){
-      notesList.innerHTML='<em>Notes non incluses.</em>';
-      medsLegendDiv.appendChild(legendDiv);
-      return;
-    }
-    // Collect all ISO dates in the 6 month range
-    const startDate=toISO(new Date(Date.UTC(months[0].year,months[0].month,1)));
-    const endDate=toISO(new Date(Date.UTC(months[5].year,months[5].month+1,0)));
-    const entries=Object.entries(cal.notes)
-      .filter(([d])=>d>=startDate&&d<=endDate)
-      .sort((a,b)=>a[0]>b[0]?1:-1);
-    if(entries.length===0){
-      notesList.innerHTML='<em>Aucune note sur cette période.</em>';
+      notesSection.style.display='none';
     }else{
-      notesList.innerHTML='<ul>'+entries.map(([d,n])=>{
-        const medsStr=n.meds&&n.meds.length?n.meds.map(id=>{const m=medMap[id];return m?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.color};border:1px solid #000;margin-right:3px;vertical-align:middle;"></span>${m.name}`:''}).filter(Boolean).join(', '):'';
-        return`<li><strong>${d}</strong>${medsStr?' — '+medsStr:''}${n.text?' : '+n.text:''}</li>`;
-      }).join('')+'</ul>';
+      notesSection.style.display='block';
+      // Collect all ISO dates in the 6 month range
+      const startDate=toISO(new Date(Date.UTC(months[0].year,months[0].month,1)));
+      const endDate=toISO(new Date(Date.UTC(months[5].year,months[5].month+1,0)));
+      const entries=Object.entries(cal.notes)
+        .filter(([d])=>d>=startDate&&d<=endDate)
+        .sort((a,b)=>a[0]>b[0]?1:-1);
+      if(entries.length===0){
+        notesList.innerHTML='<em>Aucune note sur cette période.</em>';
+      }else{
+        notesList.innerHTML='<ul>'+entries.map(([d,n])=>{
+          const medsStr=n.meds&&n.meds.length?n.meds.map(id=>{const m=medMap[id];return m?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.color};border:1px solid #000;margin-right:3px;vertical-align:middle;"></span>${m.name}`:''}).filter(Boolean).join(', '):'';
+          return`<li><strong>${d}</strong>${medsStr?' — '+medsStr:''}${n.text?' : '+n.text:''}</li>`;
+        }).join('')+'</ul>';
+      }
     }
-    medsLegendDiv.appendChild(legendDiv);
 
     document.body.style.overflow='hidden';
     document.getElementById('reportBackdrop').classList.add('open');
     document.getElementById('reportModal').classList.add('open');
   }
-
-
-  /* ── PDF Export ── */
-  function generatePDF(){
+    function generatePDF(){
     const element=document.getElementById('reportModal').querySelector('.report-card');
     const title=document.getElementById('reportTitle').textContent;
-
-    // Create a copy for PDF to avoid modifying the actual report
     const clonedReport=element.cloneNode(true);
-
+    const buttonsToRemove=clonedReport.querySelectorAll('.no-print');
+    buttonsToRemove.forEach(btn=>btn.remove());
     const opt={
-      margin:[15,10],
+      margin:[10,10,10,10],
       filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
       image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2},
-      jsPDF:{orientation:'landscape',unit:'mm',format:'a4'}
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{orientation:'landscape',unit:'mm',format:'a4'},
+      pagebreak:{mode:['avoid-all','css','legacy']}
     };
-
     html2pdf().set(opt).from(clonedReport).save();
   }
 
-  document.getElementById('reportPdfBtn').onclick=generatePDF;
-
-  function closeReport(){
+function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
     document.getElementById('reportModal').classList.remove('open');
     document.body.style.overflow='';
   }
   document.getElementById('reportCloseBtn').onclick=closeReport;
+  document.getElementById('reportPdfBtn').onclick=generatePDF;
   document.getElementById('reportBackdrop').onclick=closeReport;
 
   /* ── Migration ── */
