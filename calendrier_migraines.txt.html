@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers v2.18</title>
+<title>Mes Calendriers Santé v3.01</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -211,6 +211,18 @@
     .report-grid{max-width:100%!important;width:100%!important;}
     .report-month-block{max-width:100%!important;width:100%!important;}
   }
+
+  /* POPUP NOUVEAU CALENDRIER */
+  .newcal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:32;display:none;}
+  .newcal-backdrop.open{display:block;}
+  .newcal-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:33;padding:16px;}
+  .newcal-modal.open{display:flex;}
+  .newcal-card{width:min(94vw,380px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
+  .newcal-title{font-weight:bold;font-size:16px;}
+  .newcal-row{display:flex;flex-direction:column;gap:4px;}
+  .newcal-label{font-size:13px;color:var(--muted);margin-bottom:2px;}
+  .newcal-input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;}
+  .newcal-actions{display:flex;gap:8px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -233,7 +245,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers v2.18</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.01</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -925,6 +937,52 @@
 
     html2pdf().set(opt).from(clonedReport).save();
   }
+
+/* ── POPUP NOUVEAU CALENDRIER ── */
+function openNewCalModal(){
+  document.getElementById('newcalTitle').value='';
+  document.getElementById('newcalSince').value='';
+  document.getElementById('newcalBackdrop').classList.add('open');
+  document.getElementById('newcalModal').classList.add('open');
+}
+function closeNewCalModal(){
+  document.getElementById('newcalBackdrop').classList.remove('open');
+  document.getElementById('newcalModal').classList.remove('open');
+}
+document.getElementById('newcalCancel').onclick=closeNewCalModal;
+document.getElementById('newcalBackdrop').onclick=closeNewCalModal;
+
+/* ── MODIF LEGENDE/TITRE/DEPUIS ── */
+function openCalEditModal(def){
+  const titleInp=document.getElementById('newcalTitle');
+  const sinceInp=document.getElementById('newcalSince');
+  titleInp.value=localStorage.getItem('suiviSante.title.'+def.id)||def.title;
+  sinceInp.value=def.sinceLabel;
+
+  const createBtn=document.getElementById('newcalCreate');
+  createBtn.textContent='Modifier';
+  createBtn.onclick=()=>updateCalSettings(def);
+  openNewCalModal();
+}
+
+function updateCalSettings(def){
+  const title=document.getElementById('newcalTitle').value.trim()||def.title;
+  const since=document.getElementById('newcalSince').value.trim()||def.sinceLabel;
+
+  localStorage.setItem('suiviSante.title.'+def.id,title);
+  def.sinceLabel=since;
+
+  // Update UI
+  const cal=globalState.calendars.find(c=>c.id===def.id);
+  if(cal){
+    cal.el.title.textContent=title;
+    cal.sinceLabel=since;
+    cal.updateSince();
+  }
+
+  closeNewCalModal();
+}
+
 function closeReport(){
     document.getElementById('reportBackdrop').classList.remove('open');
     document.getElementById('reportModal').classList.remove('open');
@@ -949,8 +1007,7 @@ function closeReport(){
 
   /* ── Init ── */
   const DEFAULT_DEFS=[
-    {id:'migraines',title:'Calendrier des migraines',sinceLabel:'Nombre de jours depuis votre dernière migraine :',legend:[{label:'RAS',color:'var(--green)'},{label:'Mal de tête',color:'var(--orange)'},{label:'Migraine',color:'var(--red)'}]},
-    {id:'sommeil',title:'Suivi sommeil',sinceLabel:'Nombre de jours depuis votre dernière mauvaise nuit :',legend:[{label:'Bonne nuit',color:'var(--green)'},{label:'Nuit moyenne',color:'var(--orange)'},{label:'Mauvaise nuit',color:'var(--red)'}]}
+    {id:'migraines',title:'Calendrier des migraines',sinceLabel:'Nombre de jours depuis votre dernière migraine :',legend:[{label:'RAS',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}]}
   ];
   let savedDefs=loadLS(CALS_META_KEY);
   if(!savedDefs||!Array.isArray(savedDefs)||savedDefs.length===0){savedDefs=DEFAULT_DEFS;persist(CALS_META_KEY,savedDefs);}
@@ -961,5 +1018,24 @@ function closeReport(){
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-</body>
+
+<!-- POPUP NOUVEAU CALENDRIER -->
+<div class="newcal-backdrop" id="newcalBackdrop"></div>
+<div class="newcal-modal" id="newcalModal">
+  <div class="newcal-card">
+    <div class="newcal-title">Nouveau calendrier</div>
+    <div class="newcal-row">
+      <div class="newcal-label">Titre</div>
+      <input type="text" id="newcalTitle" class="newcal-input" placeholder="ex: Migraines">
+    </div>
+    <div class="newcal-row">
+      <div class="newcal-label">Libellé "depuis"</div>
+      <input type="text" id="newcalSince" class="newcal-input" placeholder="ex: depuis la dernière crise">
+    </div>
+    <div class="newcal-actions">
+      <button class="btn" id="newcalCancel">Annuler</button>
+      <button class="btn btn-primary" id="newcalCreate">Créer</button>
+    </div>
+  </div>
+</div></body>
 </html>
