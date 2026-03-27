@@ -150,6 +150,7 @@
   .report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
   @media(max-width:700px){.report-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:440px){.report-grid{grid-template-columns:1fr;}}
+  @media print and (max-width:480px){.report-grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
   .report-month-block{border:1px solid var(--border);border-radius:12px;padding:10px;background:#fafbff;}
   .report-month-label{font-weight:bold;font-size:14px;text-align:center;margin-bottom:6px;text-transform:capitalize;color:var(--accent);}
   .report-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-size:10px;margin-bottom:2px;}
@@ -201,10 +202,13 @@
   /* Print styles for PDF */
   @media print{
     .no-print{display:none!important;}
-    .report-grid{page-break-after:avoid;}
-    .report-meds-legend{page-break-after:avoid;page-break-inside:avoid;}
-    .report-notes-section{page-break-before:always;}
-    body{background:white;}
+    .report-card{margin:0!important;padding:10px!important;box-shadow:none!important;}
+    .report-grid{page-break-after:avoid;page-break-inside:avoid;}
+    .report-meds-legend{page-break-after:avoid;page-break-inside:avoid;margin-top:10px;}
+    .report-notes-section{page-break-before:always;margin-top:20px;}
+    body{background:white!important;margin:0!important;padding:0!important;}
+    .report-month-block{page-break-inside:avoid;padding:6px!important;margin:4px!important;}
+    .report-day{font-size:10px!important;height:20px!important;}
   }</style>
 </head>
 <body>
@@ -871,6 +875,50 @@
   }
     function generatePDF(){
     const element=document.getElementById('reportModal').querySelector('.report-card');
+    const title=document.getElementById('reportTitle').textContent;
+    const isMobile=/iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+
+    if(isMobile){
+      // Mobile: Use browser's native print functionality for better quality
+      const clonedReport=element.cloneNode(true);
+      const buttonsToRemove=clonedReport.querySelectorAll('.no-print');
+      buttonsToRemove.forEach(btn=>btn.remove());
+
+      // Create temporary container
+      const tempDiv=document.createElement('div');
+      tempDiv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;background:white;z-index:9999;padding:20px;overflow-y:auto;';
+      tempDiv.appendChild(clonedReport);
+      document.body.appendChild(tempDiv);
+
+      // Optimize for mobile print
+      clonedReport.style.cssText='width:100%;max-width:100%;margin:0;padding:0;';
+      const grid=clonedReport.querySelector('.report-grid');
+      if(grid){
+        grid.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;page-break-after:avoid;';
+      }
+
+      setTimeout(()=>{
+        window.print();
+        setTimeout(()=>{document.body.removeChild(tempDiv);},500);
+      },200);
+    }else{
+      // Desktop: Use html2pdf for better control
+      const clonedReport=element.cloneNode(true);
+      const buttonsToRemove=clonedReport.querySelectorAll('.no-print');
+      buttonsToRemove.forEach(btn=>btn.remove());
+
+      const opt={
+        margin:[10,10,10,10],
+        filename:title.replace(/[^a-z0-9]/gi,'_')+'.pdf',
+        image:{type:'jpeg',quality:0.98},
+        html2canvas:{scale:2,useCORS:true,allowTaint:true},
+        jsPDF:{orientation:'landscape',unit:'mm',format:'a4'},
+        pagebreak:{mode:['avoid-all','css','legacy']}
+      };
+
+      html2pdf().set(opt).from(clonedReport).save();
+    }
+  }
     const title=document.getElementById('reportTitle').textContent;
     const clonedReport=element.cloneNode(true);
     const buttonsToRemove=clonedReport.querySelectorAll('.no-print');
