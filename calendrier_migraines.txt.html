@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.11</title>
+<title>Mes Calendriers Santé v3.12</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.11</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.12</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1054,6 +1054,7 @@ document.getElementById('gdSetupCancel').onclick = () => {
   document.getElementById('gdSetupModal').classList.remove('open');
 };
 
+
 /* -- SAUVEGARDE -- */
 async function uploadToDrive() {
   try {
@@ -1082,34 +1083,45 @@ async function uploadToDrive() {
     const d = new Date();
     const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
 
-    // METHODE ULTRA SIMPLE 2 ETAPES POUR EVITER LES BUGS MULTIPART:
-    // 1. Créer le fichier vide (metadata)
-    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
-    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify(fileMetadata)
+    // Pour Javascript, on utilise gapi.client.request avec uploadType=multipart formatté manuellement
+    const boundary = '-------314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+
+    const metadata = { name: filename, parents: ['appDataFolder'], mimeType: 'application/json' };
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(payload) +
+      close_delim;
+
+    const request = gapi.client.request({
+        'path': '/upload/drive/v3/files',
+        'method': 'POST',
+        'params': {'uploadType': 'multipart'},
+        'headers': {
+          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+        },
+        'body': multipartRequestBody
     });
 
-    if(!createRes.ok) throw new Error("Erreur création metadata: " + await createRes.text());
-    const fileInfo = await createRes.json();
-
-    // 2. Uploader le contenu texte (patch)
-    const updateRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`, {
-      method: 'PATCH',
-      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    request.execute(function(file) {
+      if(file && file.id) {
+         alert('✅ Sauvegarde Cloud réussie !');
+      } else {
+         console.error('Erreur API Drive:', file);
+         alert('Erreur lors de la sauvegarde: ' + (file.error ? file.error.message : 'inconnue'));
+      }
     });
 
-    if(!updateRes.ok) throw new Error("Erreur upload contenu: " + await updateRes.text());
-
-    alert('✅ Sauvegarde Cloud réussie !');
   } catch(e) {
     console.error(e);
     alert('Erreur: ' + (e.message || 'Problème inattendu'));
   }
 }
-
 /* -- RESTAURATION -- */
 function openRestoreModal() {
   document.getElementById('gdRestoreList').innerHTML = '';
