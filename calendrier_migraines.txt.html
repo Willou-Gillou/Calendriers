@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.10</title>
+<title>Mes Calendriers Santé v3.11</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.10</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.11</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -460,8 +460,8 @@
     /* Export / Import */
         /* Google Drive Cloud Sync */
     sec('☁️ Cloud Sync (Google Drive)');
-    btn('☁️ Sauvegarder en ligne','',()=>initGoogleAPI(uploadToDrive));
-    btn('☁️ Restaurer depuis le cloud','',()=>initGoogleAPI(openRestoreModal));
+    btn('☁️ Sauvegarder en ligne','',()=>handleGoogleAction(uploadToDrive));
+    btn('☁️ Restaurer depuis le cloud','',()=>handleGoogleAction(openRestoreModal));
     btn('⚙️ Configurer Google Client ID','',()=>{closeDrawer();openGDSetupModal();});
     divider();
 
@@ -983,6 +983,7 @@ sec('Export / Import');
     html2pdf().set(opt).from(clonedReport).save();
   }
 
+
 /* ── GOOGLE DRIVE SYNC ── */
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 let tokenClient;
@@ -990,40 +991,50 @@ let accessToken = null;
 
 function getClientId(){ return localStorage.getItem('suiviSante.gdriveClientId'); }
 
-function initGoogleAPI(callback){
-  if(!window.gapi || !window.google) return alert("Scripts Google non chargés. Vérifiez votre connexion.");
-  const clientId = getClientId();
-  if(!clientId) return openGDSetupModal(callback);
+// Initie le client token immédiatement si le client ID existe
+function initGoogleClient() {
+  const cid = getClientId();
+  if(!cid || !window.google) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: SCOPES,
+    callback: (response) => {
+      if (response.error !== undefined) {
+        console.error(response);
+        return alert("Erreur d'authentification Google.");
+      }
+      accessToken = response.access_token;
+      // On déclenche l'action mise en attente (upload ou download)
+      if(window.pendingGoogleAction) {
+        window.pendingGoogleAction();
+        window.pendingGoogleAction = null;
+      }
+    },
+  });
+}
+// Charger au démarrage si possible
+if(window.google) initGoogleClient(); else setTimeout(initGoogleClient, 2000);
 
-  document.getElementById('gdLoader').style.display='block';
+function handleGoogleAction(actionFunc) {
+  if(!window.google || !window.gapi) return alert("Scripts Google non chargés.");
+  const cid = getClientId();
+  if(!cid) return openGDSetupModal();
+
+  if(!tokenClient) initGoogleClient();
+
+  window.pendingGoogleAction = actionFunc;
 
   gapi.load('client', async () => {
-    try {
-      await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: SCOPES,
-        callback: (tokenResponse) => {
-          if (tokenResponse.error !== undefined) { throw (tokenResponse); }
-          accessToken = tokenResponse.access_token;
-          callback();
-        },
-      });
-
-      if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-      } else {
-        callback();
-      }
-    } catch(err) {
-      console.error(err);
-      alert("Erreur init Google API. Le Client ID est-il correct ?");
-      document.getElementById('gdLoader').style.display='none';
+    await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+    if (!accessToken) {
+      tokenClient.requestAccessToken({prompt: ''}); // Déclenché DIRECTEMENT par le clic (évite le blocage popup iOS)
+    } else {
+      actionFunc();
     }
   });
 }
 
-function openGDSetupModal(callbackToRunAfter) {
+function openGDSetupModal() {
   document.getElementById('gdClientIdInp').value = getClientId()||'';
   document.getElementById('gdSetupBackdrop').classList.add('open');
   document.getElementById('gdSetupModal').classList.add('open');
@@ -1034,7 +1045,7 @@ function openGDSetupModal(callbackToRunAfter) {
     localStorage.setItem('suiviSante.gdriveClientId', val);
     document.getElementById('gdSetupBackdrop').classList.remove('open');
     document.getElementById('gdSetupModal').classList.remove('open');
-    if(callbackToRunAfter) initGoogleAPI(callbackToRunAfter);
+    initGoogleClient();
   };
 }
 
@@ -1046,7 +1057,6 @@ document.getElementById('gdSetupCancel').onclick = () => {
 /* -- SAUVEGARDE -- */
 async function uploadToDrive() {
   try {
-    // 1. Lister les backups existants
     const listRes = await gapi.client.drive.files.list({
       spaces: 'appDataFolder',
       fields: 'files(id, name, createdTime)',
@@ -1054,14 +1064,12 @@ async function uploadToDrive() {
     });
     const files = listRes.result.files || [];
 
-    // 2. Si >= 5 backups, supprimer les plus anciens
     if(files.length >= 5) {
       for(let i = 4; i < files.length; i++) {
         await gapi.client.drive.files.delete({fileId: files[i].id});
       }
     }
 
-    // 3. Préparer le payload
     const payload = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
     globalState.calDefs.forEach(d => {
       payload.data[d.id] = {
@@ -1074,43 +1082,28 @@ async function uploadToDrive() {
     const d = new Date();
     const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
 
-    const fileContent = JSON.stringify(payload);
-    const metadata = {
-      name: filename,
-      parents: ['appDataFolder'],
-      mimeType: 'application/json'
-    };
-
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-    form.append('file', new Blob([fileContent], {type: 'application/json'}));
-
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id');
-      xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
-      xhr.responseType = 'json';
-
-      xhr.onload = () => {
-        if(xhr.status === 200) {
-          alert('✅ Sauvegarde Cloud réussie !');
-          resolve();
-        } else {
-          console.error("XHR Error:", xhr.response);
-          alert('Erreur HTTP ' + xhr.status + ': ' + (xhr.response?.error?.message || 'Erreur inconnue'));
-          reject();
-        }
-      };
-
-      xhr.onerror = () => {
-        console.error("XHR Network Error");
-        alert('Erreur réseau lors de la sauvegarde. Vérifiez votre connexion.');
-        reject();
-      };
-
-      xhr.send(form);
+    // METHODE ULTRA SIMPLE 2 ETAPES POUR EVITER LES BUGS MULTIPART:
+    // 1. Créer le fichier vide (metadata)
+    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(fileMetadata)
     });
 
+    if(!createRes.ok) throw new Error("Erreur création metadata: " + await createRes.text());
+    const fileInfo = await createRes.json();
+
+    // 2. Uploader le contenu texte (patch)
+    const updateRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if(!updateRes.ok) throw new Error("Erreur upload contenu: " + await updateRes.text());
+
+    alert('✅ Sauvegarde Cloud réussie !');
   } catch(e) {
     console.error(e);
     alert('Erreur: ' + (e.message || 'Problème inattendu'));
@@ -1145,6 +1138,10 @@ function openRestoreModal() {
       btn.onclick = () => performRestore(f.id, d.toLocaleString('fr-FR'));
       list.appendChild(btn);
     });
+  }).catch(e => {
+    console.error(e);
+    document.getElementById('gdLoader').style.display='none';
+    alert("Erreur liste fichiers");
   });
 }
 
