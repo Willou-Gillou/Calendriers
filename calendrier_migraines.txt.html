@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.03</title>
+<title>Mes Calendriers Santé v3.07</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -212,19 +212,28 @@
     .report-month-block{max-width:100%!important;width:100%!important;}
   }
 
-  /* POPUP NOUVEAU/EDIT CALENDRIER */
-  .newcal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:32;display:none;}
-  .newcal-backdrop.open{display:block;}
-  .newcal-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:33;padding:16px;}
-  .newcal-modal.open{display:flex;}
-  .newcal-card{width:min(94vw,380px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
-  .newcal-title{font-weight:bold;font-size:16px;}
-  .newcal-row{display:flex;flex-direction:column;gap:4px;}
-  .newcal-label{font-size:13px;color:var(--muted);}
-  .newcal-input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;}
-  .newcal-actions{display:flex;gap:8px;justify-content:flex-end;}
+/* GDRIVE MODALS */
+.gd-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:90;display:none;}
+.gd-backdrop.open{display:block;}
+.gd-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:95;padding:16px;}
+.gd-modal.open{display:flex;}
+.gd-card{width:min(94vw,400px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
+.gd-title{font-weight:bold;font-size:16px;}
+.gd-desc{font-size:13px;color:var(--muted);line-height:1.4;}
+.gd-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
+.gd-list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;}
+.gd-item{padding:12px;border:1px solid var(--border);border-radius:8px;background:#f9fafb;cursor:pointer;text-align:left;}
+.gd-item:hover{background:#f0f4ff;border-color:var(--accent);}
+.gd-item-date{font-weight:bold;font-size:14px;color:var(--text);}
+.gd-item-size{font-size:12px;color:var(--muted);margin-top:4px;}
+.gd-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+.loader{display:none;font-size:14px;color:var(--accent);text-align:center;font-weight:bold;}
 </style>
+
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 </head>
+
 <body>
 
 <header class="topbar">
@@ -245,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.03</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.07</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -341,7 +350,8 @@
   const toISO=d=>d.toISOString().slice(0,10);
   const nextState=s=>(s+1)%3;
   const applyState=(el,s)=>{el.classList.remove('state-0','state-1','state-2');el.classList.add('state-'+s);};
-  const persist=(key,obj)=>localStorage.setItem(key,JSON.stringify(obj));
+  const markModified=()=>localStorage.setItem('suiviSante.lastModified',Date.now());
+  const persist=(key,obj)=>{localStorage.setItem(key,JSON.stringify(obj));markModified();};
   const loadLS=key=>{try{return JSON.parse(localStorage.getItem(key));}catch{return null;}};
 
   /* ── Confirm ── */
@@ -364,7 +374,7 @@
 
   /* ── GlobalState ── */
   const globalState={year:new Date().getFullYear(),month:new Date().getMonth(),calendars:[],calDefs:[]};
-  function saveCalDefs(){persist(CALS_META_KEY,globalState.calDefs);}
+  function saveCalDefs(){persist(CALS_META_KEY,globalState.calDefs);markModified();}
 
   /* ── Médicaments ── */
   function loadMeds(calId){return loadLS('suiviSante.meds.'+calId)||[];}
@@ -420,7 +430,14 @@
     const lbl=txt=>{const l=document.createElement('div');l.className='drawer-label';l.textContent=txt;drawerBody.appendChild(l);};
 
     /* Export / Import */
-    sec('Export / Import');
+        /* Google Drive Cloud Sync */
+    sec('☁️ Cloud Sync (Google Drive)');
+    btn('☁️ Sauvegarder en ligne','',()=>initGoogleAPI(uploadToDrive));
+    btn('☁️ Restaurer depuis le cloud','',()=>initGoogleAPI(openRestoreModal));
+    btn('⚙️ Configurer Google Client ID','',()=>{closeDrawer();openGDSetupModal();});
+    divider();
+
+sec('Export / Import');
     btn('Exporter tous les calendriers (JSON)','',()=>{
       const payload={calendars:globalState.calDefs,data:{}};
       globalState.calDefs.forEach(d=>{payload.data[d.id]={days:loadLS('suiviSante.days.'+d.id)||{},notes:loadLS('suiviSante.notes.'+d.id)||{},meds:loadLS('suiviSante.meds.'+d.id)||[]};});
@@ -510,7 +527,7 @@
       const t=nt.value.trim();if(!t){alert('Veuillez saisir un titre.');return;}
       const id='cal_'+Date.now();
       const def={id,title:t,sinceLabel:ns.value.trim()||'Nombre de jours depuis le dernier événement :',legend:[{label:'Bon',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}]};
-      globalState.calDefs.push(def);saveCalDefs();localStorage.setItem('suiviSante.title.'+id,t);
+      globalState.calDefs.push(def);saveCalDefs();localStorage.setItem('suiviSante.title.'+id,t);markModified();
       createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);
       nt.value='';ns.value='';buildDrawer();closeDrawer();
     });
@@ -938,45 +955,211 @@
     html2pdf().set(opt).from(clonedReport).save();
   }
 
-/* ── POPUP NOUVEAU/EDIT CALENDRIER ── */
-let editingCal=null;
-function openNewCalModal(def=null){
-  editingCal=def;
-  document.getElementById('newcalTitle').value=def ? (localStorage.getItem('suiviSante.title.'+def.id)||def.title) : '';
-  document.getElementById('newcalSince').value=def ? def.sinceLabel : '';
-  document.getElementById('newcalTitleText').textContent=def ? 'Modifier calendrier' : 'Nouveau calendrier';
-  document.getElementById('newcalCreate').textContent=def ? 'Modifier' : 'Créer';
-  document.getElementById('newcalCreate').onclick=def ? ()=>updateCalSettings(def) : createNewCal;
-  document.getElementById('newcalBackdrop').classList.add('open');
-  document.getElementById('newcalModal').classList.add('open');
-}
-function closeNewCalModal(){
-  document.getElementById('newcalBackdrop').classList.remove('open');
-  document.getElementById('newcalModal').classList.remove('open');
+/* ── GOOGLE DRIVE SYNC ── */
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+let tokenClient;
+let accessToken = null;
+
+function getClientId(){ return localStorage.getItem('suiviSante.gdriveClientId'); }
+
+function initGoogleAPI(callback){
+  if(!window.gapi || !window.google) return alert("Scripts Google non chargés. Vérifiez votre connexion.");
+  const clientId = getClientId();
+  if(!clientId) return openGDSetupModal(callback);
+
+  document.getElementById('gdLoader').style.display='block';
+
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+          if (tokenResponse.error !== undefined) { throw (tokenResponse); }
+          accessToken = tokenResponse.access_token;
+          callback();
+        },
+      });
+
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } else {
+        callback();
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Erreur init Google API. Le Client ID est-il correct ?");
+      document.getElementById('gdLoader').style.display='none';
+    }
+  });
 }
 
-function createNewCal(){
-  const t=document.getElementById('newcalTitle').value.trim();
-  if(!t){alert('Titre requis');return;}
-  const id='cal_'+Date.now();
-  const def={id,title:t,sinceLabel:document.getElementById('newcalSince').value.trim()||'Nombre de jours depuis le dernier événement :',legend:[{label:'Bon',color:'var(--green)'},{label:'Moyen',color:'var(--orange)'},{label:'Mauvais',color:'var(--red)'}]};
-  globalState.calDefs.push(def);saveCalDefs();localStorage.setItem('suiviSante.title.'+id,t);
-  createCalendarDOM(def);const cal=initCalendar(def);globalState.calendars.push(cal);
-  closeNewCalModal();buildDrawer();closeDrawer();
+function openGDSetupModal(callbackToRunAfter) {
+  document.getElementById('gdClientIdInp').value = getClientId()||'';
+  document.getElementById('gdSetupBackdrop').classList.add('open');
+  document.getElementById('gdSetupModal').classList.add('open');
+
+  document.getElementById('gdSetupSave').onclick = () => {
+    const val = document.getElementById('gdClientIdInp').value.trim();
+    if(!val) return alert("Client ID requis");
+    localStorage.setItem('suiviSante.gdriveClientId', val);
+    document.getElementById('gdSetupBackdrop').classList.remove('open');
+    document.getElementById('gdSetupModal').classList.remove('open');
+    if(callbackToRunAfter) initGoogleAPI(callbackToRunAfter);
+  };
 }
 
-function updateCalSettings(def){
-  const title=document.getElementById('newcalTitle').value.trim()||def.title;
-  const since=document.getElementById('newcalSince').value.trim()||def.sinceLabel;
-  localStorage.setItem('suiviSante.title.'+def.id,title);
-  def.sinceLabel=since;
-  const cal=globalState.calendars.find(c=>c.id===def.id);
-  if(cal){
-    cal.el.title.textContent=title;
-    cal.sinceLabel=since;
-    cal.updateSince();
+document.getElementById('gdSetupCancel').onclick = () => {
+  document.getElementById('gdSetupBackdrop').classList.remove('open');
+  document.getElementById('gdSetupModal').classList.remove('open');
+};
+
+/* -- SAUVEGARDE -- */
+async function uploadToDrive() {
+  try {
+    // 1. Lister les backups existants
+    const listRes = await gapi.client.drive.files.list({
+      spaces: 'appDataFolder',
+      fields: 'files(id, name, createdTime)',
+      orderBy: 'createdTime desc'
+    });
+    const files = listRes.result.files || [];
+
+    // 2. Si >= 5 backups, supprimer les plus anciens
+    if(files.length >= 5) {
+      for(let i = 4; i < files.length; i++) {
+        await gapi.client.drive.files.delete({fileId: files[i].id});
+      }
+    }
+
+    // 3. Préparer le payload
+    const payload = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
+    globalState.calDefs.forEach(d => {
+      payload.data[d.id] = {
+        days: loadLS('suiviSante.days.'+d.id) || {},
+        notes: loadLS('suiviSante.notes.'+d.id) || {},
+        meds: loadLS('suiviSante.meds.'+d.id) || []
+      };
+    });
+
+    const d = new Date();
+    const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
+
+    const fileContent = JSON.stringify(payload);
+    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
+    const boundary = '-------314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(fileMetadata) +
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      fileContent +
+      close_delim;
+
+    await gapi.client.request({
+      'path': '/upload/drive/v3/files',
+      'method': 'POST',
+      'params': {'uploadType': 'multipart'},
+      'headers': {'Content-Type': 'multipart/related; boundary="' + boundary + '"'},
+      'body': multipartRequestBody
+    });
+
+    alert('✅ Sauvegarde Cloud réussie !');
+  } catch(e) {
+    console.error(e);
+    alert('Erreur lors de la sauvegarde.');
   }
-  closeNewCalModal();buildDrawer();closeDrawer();
+}
+
+/* -- RESTAURATION -- */
+function openRestoreModal() {
+  document.getElementById('gdRestoreList').innerHTML = '';
+  document.getElementById('gdLoader').style.display='block';
+  document.getElementById('gdRestoreBackdrop').classList.add('open');
+  document.getElementById('gdRestoreModal').classList.add('open');
+
+  gapi.client.drive.files.list({
+    spaces: 'appDataFolder',
+    fields: 'files(id, name, createdTime, size)',
+    orderBy: 'createdTime desc'
+  }).then(res => {
+    document.getElementById('gdLoader').style.display='none';
+    const files = res.result.files;
+    const list = document.getElementById('gdRestoreList');
+    if(!files || files.length === 0) {
+      list.innerHTML = '<div style="padding:10px;text-align:center;color:#666;">Aucune sauvegarde trouvée.</div>';
+      return;
+    }
+
+    files.forEach(f => {
+      const d = new Date(f.createdTime);
+      const btn = document.createElement('button');
+      btn.className = 'gd-item';
+      btn.innerHTML = `<div class="gd-item-date">${d.toLocaleString('fr-FR')}</div><div class="gd-item-size">${(f.size/1024).toFixed(1)} KB</div>`;
+      btn.onclick = () => performRestore(f.id, d.toLocaleString('fr-FR'));
+      list.appendChild(btn);
+    });
+  });
+}
+
+document.getElementById('gdRestoreCancel').onclick = () => {
+  document.getElementById('gdRestoreBackdrop').classList.remove('open');
+  document.getElementById('gdRestoreModal').classList.remove('open');
+};
+
+async function performRestore(fileId, dateStr) {
+  try {
+    document.getElementById('gdLoader').style.display='block';
+    const res = await gapi.client.drive.files.get({fileId: fileId, alt: 'media'});
+    document.getElementById('gdLoader').style.display='none';
+
+    const cloudData = res.result;
+    if(!cloudData || !cloudData.calendars) throw new Error("Fichier invalide");
+
+    const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
+    const cloudMod = parseInt(cloudData.lastModified||'0', 10);
+
+    let msg = `Voulez-vous vraiment écraser vos données locales actuelles par la sauvegarde du ${dateStr} ?`;
+    if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
+      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications récentes seront perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
+    }
+
+    const ok = await showConfirm('Restaurer', msg);
+    if(!ok) return;
+
+    // Backup de secours local
+    const bkpBlob = new Blob([localStorage.getItem('suiviSante.lastModified') ? JSON.stringify(localStorage) : ''], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(bkpBlob);
+    a.download = 'backup_secours_avant_restauration.json';
+    a.click();
+
+    // Effacer et appliquer
+    localStorage.clear();
+    persist(CALS_META_KEY, cloudData.calendars);
+    cloudData.calendars.forEach(def => {
+      const d = cloudData.data && cloudData.data[def.id];
+      if(d) {
+        persist('suiviSante.days.'+def.id, d.days||{});
+        persist('suiviSante.notes.'+def.id, d.notes||{});
+        persist('suiviSante.meds.'+def.id, d.meds||[]);
+      }
+      if(def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
+    });
+    localStorage.setItem('suiviSante.lastModified', cloudData.lastModified||Date.now());
+
+    alert("Restauration réussie !");
+    location.reload();
+  } catch(e) {
+    console.error(e);
+    alert("Erreur lors de la restauration. " + (e.message||''));
+    document.getElementById('gdLoader').style.display='none';
+  }
 }
 
 function closeReport(){
@@ -1015,23 +1198,32 @@ function closeReport(){
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<!-- POPUP NOUVEAU CALENDRIER -->
-<div class="newcal-backdrop" id="newcalBackdrop"></div>
-<div class="newcal-modal" id="newcalModal">
-  <div class="newcal-card">
-    <div class="newcal-title" id="newcalTitleText">Nouveau calendrier</div>
-    <div class="newcal-row">
-      <div class="newcal-label">Titre</div>
-      <input type="text" id="newcalTitle" class="newcal-input" placeholder="ex: Migraines">
-    </div>
-    <div class="newcal-row">
-      <div class="newcal-label">Libellé "depuis"</div>
-      <input type="text" id="newcalSince" class="newcal-input" placeholder="ex: depuis la dernière crise">
-    </div>
-    <div class="newcal-actions">
-      <button class="btn" id="newcalCancel">Annuler</button>
-      <button class="btn btn-primary" id="newcalCreate">Créer</button>
+<!-- GDRIVE SETUP -->
+<div class="gd-backdrop" id="gdSetupBackdrop"></div>
+<div class="gd-modal" id="gdSetupModal">
+  <div class="gd-card">
+    <div class="gd-title">Configuration Google Drive</div>
+    <div class="gd-desc">Pour utiliser la sauvegarde Cloud, veuillez entrer le "Client ID" de votre application Google Cloud. Il sera sauvegardé localement.</div>
+    <input type="text" id="gdClientIdInp" class="gd-input" placeholder="xxxx-yyyy.apps.googleusercontent.com">
+    <div class="gd-actions">
+      <button class="btn" id="gdSetupCancel">Annuler</button>
+      <button class="btn btn-primary" id="gdSetupSave">Enregistrer</button>
     </div>
   </div>
-</div></body>
+</div>
+
+<!-- GDRIVE RESTORE LIST -->
+<div class="gd-backdrop" id="gdRestoreBackdrop"></div>
+<div class="gd-modal" id="gdRestoreModal">
+  <div class="gd-card">
+    <div class="gd-title">Restaurer une sauvegarde</div>
+    <div class="gd-desc">Choisissez une sauvegarde (les plus récentes en premier). Attention, cela remplacera vos données actuelles.</div>
+    <div id="gdLoader" class="loader">Chargement depuis Google Drive...</div>
+    <div class="gd-list" id="gdRestoreList"></div>
+    <div class="gd-actions">
+      <button class="btn" id="gdRestoreCancel">Annuler</button>
+    </div>
+  </div>
+</div>
+</body>
 </html>
