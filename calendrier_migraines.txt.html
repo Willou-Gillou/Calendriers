@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.08</title>
+<title>Mes Calendriers Santé v3.09</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.08</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.09</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1077,17 +1077,32 @@ async function uploadToDrive() {
     const fileContent = JSON.stringify(payload);
     const fileMetadata = { name: filename, parents: ['appDataFolder'] };
 
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-    form.append('file', new Blob([fileContent], { type: 'application/json' }));
+    const boundary = '-------314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(fileMetadata) +
+      delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      fileContent +
+      close_delim;
 
     const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
-      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-      body: form
+      headers: new Headers({
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      }),
+      body: multipartRequestBody
     });
 
-    if(!res.ok) throw new Error("Erreur HTTP: " + res.status);
+    if(!res.ok) {
+      const errText = await res.text();
+      throw new Error("Erreur HTTP " + res.status + ": " + errText);
+    }
 
     alert('✅ Sauvegarde Cloud réussie !');
   } catch(e) {
