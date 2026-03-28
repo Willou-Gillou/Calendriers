@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.12</title>
+<title>Mes Calendriers Santé v3.13</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.12</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.13</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -984,9 +984,12 @@ sec('Export / Import');
   }
 
 
+
 /* ── GOOGLE DRIVE SYNC ── */
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 let tokenClient;
+let gapiInited = false;
 let accessToken = null;
 
 function getClientId(){ return localStorage.getItem('suiviSante.gdriveClientId'); }
@@ -994,44 +997,57 @@ function getClientId(){ return localStorage.getItem('suiviSante.gdriveClientId')
 // Initie le client token immédiatement si le client ID existe
 function initGoogleClient() {
   const cid = getClientId();
-  if(!cid || !window.google) return;
+  if(!cid || !window.google || !window.gapi) return;
+
+  // 1. Initialiser le Token Client (Identity Services)
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: SCOPES,
     callback: (response) => {
       if (response.error !== undefined) {
         console.error(response);
-        return alert("Erreur d'authentification Google.");
+        return alert("Erreur d'authentification Google: " + response.error);
       }
       accessToken = response.access_token;
-      // On déclenche l'action mise en attente (upload ou download)
       if(window.pendingGoogleAction) {
         window.pendingGoogleAction();
         window.pendingGoogleAction = null;
       }
     },
   });
+
+  // 2. Initialiser GAPI Client (Drive API)
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
+      gapiInited = true;
+    } catch(err) {
+      console.error('Erreur init gapi.client:', err);
+    }
+  });
 }
+
 // Charger au démarrage si possible
-if(window.google) initGoogleClient(); else setTimeout(initGoogleClient, 2000);
+setTimeout(initGoogleClient, 1500);
 
 function handleGoogleAction(actionFunc) {
-  if(!window.google || !window.gapi) return alert("Scripts Google non chargés.");
   const cid = getClientId();
   if(!cid) return openGDSetupModal();
 
-  if(!tokenClient) initGoogleClient();
+  if(!tokenClient || !gapiInited) {
+    alert("Initialisation de Google Drive en cours... Veuillez réessayer dans un instant.");
+    initGoogleClient();
+    return;
+  }
 
   window.pendingGoogleAction = actionFunc;
 
-  gapi.load('client', async () => {
-    await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
-    if (!accessToken) {
-      tokenClient.requestAccessToken({prompt: ''}); // Déclenché DIRECTEMENT par le clic (évite le blocage popup iOS)
-    } else {
-      actionFunc();
-    }
-  });
+  // Déclencher le popup Oauth s'il n'y a pas de token
+  if (!accessToken) {
+    tokenClient.requestAccessToken({prompt: ''}); // Evite le blocage popup
+  } else {
+    actionFunc();
+  }
 }
 
 function openGDSetupModal() {
@@ -1054,10 +1070,12 @@ document.getElementById('gdSetupCancel').onclick = () => {
   document.getElementById('gdSetupModal').classList.remove('open');
 };
 
-
 /* -- SAUVEGARDE -- */
 async function uploadToDrive() {
   try {
+    if(!gapi.client.drive) throw new Error("L'API Google Drive n'est pas chargée.");
+
+    // Lister les fichiers existants
     const listRes = await gapi.client.drive.files.list({
       spaces: 'appDataFolder',
       fields: 'files(id, name, createdTime)',
@@ -1065,6 +1083,7 @@ async function uploadToDrive() {
     });
     const files = listRes.result.files || [];
 
+    // Garder seulement les 4 plus récents (pour faire de la place pour le 5ème)
     if(files.length >= 5) {
       for(let i = 4; i < files.length; i++) {
         await gapi.client.drive.files.delete({fileId: files[i].id});
@@ -1083,47 +1102,49 @@ async function uploadToDrive() {
     const d = new Date();
     const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
 
-    // Pour Javascript, on utilise gapi.client.request avec uploadType=multipart formatté manuellement
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
+    // Envoi via fetch pour plus de robustesse sur les données texte JSON pures
+    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
+    form.append('file', new Blob([JSON.stringify(payload)], {type: 'application/json'}));
 
-    const metadata = { name: filename, parents: ['appDataFolder'], mimeType: 'application/json' };
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(metadata) +
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(payload) +
-      close_delim;
-
-    const request = gapi.client.request({
-        'path': '/upload/drive/v3/files',
-        'method': 'POST',
-        'params': {'uploadType': 'multipart'},
-        'headers': {
-          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-        },
-        'body': multipartRequestBody
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+      body: form
     });
 
-    request.execute(function(file) {
-      if(file && file.id) {
-         alert('✅ Sauvegarde Cloud réussie !');
-      } else {
-         console.error('Erreur API Drive:', file);
-         alert('Erreur lors de la sauvegarde: ' + (file.error ? file.error.message : 'inconnue'));
-      }
-    });
+    if(!res.ok) {
+        // Fallback: 2-step process si multipart fetch échoue
+        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify(fileMetadata)
+        });
+        if(!createRes.ok) throw new Error("Erreur création metadata.");
+        const fileInfo = await createRes.json();
 
+        const updateRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`, {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if(!updateRes.ok) throw new Error("Erreur upload contenu.");
+    }
+
+    alert('✅ Sauvegarde Cloud réussie !');
   } catch(e) {
-    console.error(e);
-    alert('Erreur: ' + (e.message || 'Problème inattendu'));
+    console.error("Upload Error:", e);
+    alert('Erreur de sauvegarde: ' + (e.message || 'Problème inattendu'));
   }
 }
+
 /* -- RESTAURATION -- */
 function openRestoreModal() {
+  if(!gapi.client.drive) {
+     return alert("L'API Google Drive n'est pas chargée. Veuillez patienter.");
+  }
+
   document.getElementById('gdRestoreList').innerHTML = '';
   document.getElementById('gdLoader').style.display='block';
   document.getElementById('gdRestoreBackdrop').classList.add('open');
@@ -1151,9 +1172,9 @@ function openRestoreModal() {
       list.appendChild(btn);
     });
   }).catch(e => {
-    console.error(e);
+    console.error("Restore List Error:", e);
     document.getElementById('gdLoader').style.display='none';
-    alert("Erreur liste fichiers");
+    alert("Erreur liste fichiers: " + (e.message || e.error?.message || "inconnue"));
   });
 }
 
