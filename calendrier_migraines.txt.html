@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.09</title>
+<title>Mes Calendriers Santé v3.10</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.09</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.10</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1075,39 +1075,45 @@ async function uploadToDrive() {
     const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
 
     const fileContent = JSON.stringify(payload);
-    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
+    const metadata = {
+      name: filename,
+      parents: ['appDataFolder'],
+      mimeType: 'application/json'
+    };
 
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', new Blob([fileContent], {type: 'application/json'}));
 
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-      JSON.stringify(fileMetadata) +
-      delimiter +
-      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-      fileContent +
-      close_delim;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
+      xhr.responseType = 'json';
 
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: new Headers({
-        'Authorization': 'Bearer ' + accessToken,
-        'Content-Type': 'multipart/related; boundary=' + boundary
-      }),
-      body: multipartRequestBody
+      xhr.onload = () => {
+        if(xhr.status === 200) {
+          alert('✅ Sauvegarde Cloud réussie !');
+          resolve();
+        } else {
+          console.error("XHR Error:", xhr.response);
+          alert('Erreur HTTP ' + xhr.status + ': ' + (xhr.response?.error?.message || 'Erreur inconnue'));
+          reject();
+        }
+      };
+
+      xhr.onerror = () => {
+        console.error("XHR Network Error");
+        alert('Erreur réseau lors de la sauvegarde. Vérifiez votre connexion.');
+        reject();
+      };
+
+      xhr.send(form);
     });
 
-    if(!res.ok) {
-      const errText = await res.text();
-      throw new Error("Erreur HTTP " + res.status + ": " + errText);
-    }
-
-    alert('✅ Sauvegarde Cloud réussie !');
   } catch(e) {
     console.error(e);
-    alert('Erreur lors de la sauvegarde.');
+    alert('Erreur: ' + (e.message || 'Problème inattendu'));
   }
 }
 
