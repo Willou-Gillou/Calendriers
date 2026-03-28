@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.07</title>
+<title>Mes Calendriers Santé v3.07b</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -254,7 +254,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.07</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v3.07b</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -326,6 +326,34 @@
     <div class="report-notes-section" style="page-break-before:always;">
       <div class="report-notes-title">Notes des 6 derniers mois</div>
       <div class="report-notes-list" id="reportNotesList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GDRIVE SETUP -->
+<div class="gd-backdrop" id="gdSetupBackdrop"></div>
+<div class="gd-modal" id="gdSetupModal">
+  <div class="gd-card">
+    <div class="gd-title">Configuration Google Drive</div>
+    <div class="gd-desc">Pour utiliser la sauvegarde Cloud, veuillez entrer le "Client ID" de votre application Google Cloud. Il sera sauvegardé localement.</div>
+    <input type="text" id="gdClientIdInp" class="gd-input" placeholder="xxxx-yyyy.apps.googleusercontent.com">
+    <div class="gd-actions">
+      <button class="btn" id="gdSetupCancel">Annuler</button>
+      <button class="btn btn-primary" id="gdSetupSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- GDRIVE RESTORE LIST -->
+<div class="gd-backdrop" id="gdRestoreBackdrop"></div>
+<div class="gd-modal" id="gdRestoreModal">
+  <div class="gd-card">
+    <div class="gd-title">Restaurer une sauvegarde</div>
+    <div class="gd-desc">Choisissez une sauvegarde (les plus récentes en premier). Attention, cela remplacera vos données actuelles.</div>
+    <div id="gdLoader" class="loader">Chargement depuis Google Drive...</div>
+    <div class="gd-list" id="gdRestoreList"></div>
+    <div class="gd-actions">
+      <button class="btn" id="gdRestoreCancel">Annuler</button>
     </div>
   </div>
 </div>
@@ -1198,32 +1226,5 @@ function closeReport(){
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<!-- GDRIVE SETUP -->
-<div class="gd-backdrop" id="gdSetupBackdrop"></div>
-<div class="gd-modal" id="gdSetupModal">
-  <div class="gd-card">
-    <div class="gd-title">Configuration Google Drive</div>
-    <div class="gd-desc">Pour utiliser la sauvegarde Cloud, veuillez entrer le "Client ID" de votre application Google Cloud. Il sera sauvegardé localement.</div>
-    <input type="text" id="gdClientIdInp" class="gd-input" placeholder="xxxx-yyyy.apps.googleusercontent.com">
-    <div class="gd-actions">
-      <button class="btn" id="gdSetupCancel">Annuler</button>
-      <button class="btn btn-primary" id="gdSetupSave">Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<!-- GDRIVE RESTORE LIST -->
-<div class="gd-backdrop" id="gdRestoreBackdrop"></div>
-<div class="gd-modal" id="gdRestoreModal">
-  <div class="gd-card">
-    <div class="gd-title">Restaurer une sauvegarde</div>
-    <div class="gd-desc">Choisissez une sauvegarde (les plus récentes en premier). Attention, cela remplacera vos données actuelles.</div>
-    <div id="gdLoader" class="loader">Chargement depuis Google Drive...</div>
-    <div class="gd-list" id="gdRestoreList"></div>
-    <div class="gd-actions">
-      <button class="btn" id="gdRestoreCancel">Annuler</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
