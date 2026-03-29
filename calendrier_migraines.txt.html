@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v3.13</title>
+<title>Mes Calendriers Santé v4.00</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -212,28 +212,25 @@
     .report-month-block{max-width:100%!important;width:100%!important;}
   }
 
-/* GDRIVE MODALS */
-.gd-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:90;display:none;}
-.gd-backdrop.open{display:block;}
-.gd-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:95;padding:16px;}
-.gd-modal.open{display:flex;}
-.gd-card{width:min(94vw,400px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
-.gd-title{font-weight:bold;font-size:16px;}
-.gd-desc{font-size:13px;color:var(--muted);line-height:1.4;}
-.gd-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
-.gd-list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;}
-.gd-item{padding:12px;border:1px solid var(--border);border-radius:8px;background:#f9fafb;cursor:pointer;text-align:left;}
-.gd-item:hover{background:#f0f4ff;border-color:var(--accent);}
-.gd-item-date{font-weight:bold;font-size:14px;color:var(--text);}
-.gd-item-size{font-size:12px;color:var(--muted);margin-top:4px;}
-.gd-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
-.loader{display:none;font-size:14px;color:var(--accent);text-align:center;font-weight:bold;}
+/* CLOUD SYNC MODALS */
+.jb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:90;display:none;}
+.jb-backdrop.open{display:block;}
+.jb-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:95;padding:16px;}
+.jb-modal.open{display:flex;}
+.jb-card{width:min(94vw,400px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;max-height:90vh;}
+.jb-title{font-weight:bold;font-size:16px;}
+.jb-desc{font-size:13px;color:var(--muted);line-height:1.4;}
+.jb-label{font-size:12px;font-weight:bold;color:var(--muted);margin-bottom:4px;}
+.jb-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
+.jb-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;}
+.jb-item{padding:12px;border:1px solid var(--border);border-radius:8px;background:#f9fafb;cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;}
+.jb-item:hover{background:#f0f4ff;border-color:var(--accent);}
+.jb-item-date{font-weight:bold;font-size:14px;color:var(--text);}
+.jb-item-devices{font-size:12px;color:var(--muted);margin-top:4px;}
+.jb-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+.loader{display:none;font-size:14px;color:var(--accent);text-align:center;font-weight:bold;padding:10px 0;}
 </style>
-
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
 </head>
-
 <body>
 
 <header class="topbar">
@@ -254,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v3.13</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.00</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -330,30 +327,38 @@
   </div>
 </div>
 
-<!-- GDRIVE SETUP -->
-<div class="gd-backdrop" id="gdSetupBackdrop"></div>
-<div class="gd-modal" id="gdSetupModal">
-  <div class="gd-card">
-    <div class="gd-title">Configuration Google Drive</div>
-    <div class="gd-desc">Pour utiliser la sauvegarde Cloud, veuillez entrer le "Client ID" de votre application Google Cloud. Il sera sauvegardé localement.</div>
-    <input type="text" id="gdClientIdInp" class="gd-input" placeholder="xxxx-yyyy.apps.googleusercontent.com">
-    <div class="gd-actions">
-      <button class="btn" id="gdSetupCancel">Annuler</button>
-      <button class="btn btn-primary" id="gdSetupSave">Enregistrer</button>
+
+<!-- JSONBIN SETUP -->
+<div class="jb-backdrop" id="jbSetupBackdrop"></div>
+<div class="jb-modal" id="jbSetupModal">
+  <div class="jb-card">
+    <div class="jb-title">Configuration Cloud (JSONBin)</div>
+    <div class="jb-desc">Pour activer la sauvegarde, créez un compte gratuit sur JSONBin.io et renseignez vos identifiants ci-dessous.</div>
+    <div>
+      <div class="jb-label">Master API Key ($2...)</div>
+      <input type="password" id="jbApiKeyInp" class="jb-input" placeholder="Collez votre clé API ici">
+    </div>
+    <div>
+      <div class="jb-label">Bin ID</div>
+      <input type="text" id="jbBinIdInp" class="jb-input" placeholder="ID du Bin (ex: 64a1b...)">
+    </div>
+    <div class="jb-actions">
+      <button class="btn" id="jbSetupCancel">Annuler</button>
+      <button class="btn btn-primary" id="jbSetupSave">Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- GDRIVE RESTORE LIST -->
-<div class="gd-backdrop" id="gdRestoreBackdrop"></div>
-<div class="gd-modal" id="gdRestoreModal">
-  <div class="gd-card">
-    <div class="gd-title">Restaurer une sauvegarde</div>
-    <div class="gd-desc">Choisissez une sauvegarde (les plus récentes en premier). Attention, cela remplacera vos données actuelles.</div>
-    <div id="gdLoader" class="loader">Chargement depuis Google Drive...</div>
-    <div class="gd-list" id="gdRestoreList"></div>
-    <div class="gd-actions">
-      <button class="btn" id="gdRestoreCancel">Annuler</button>
+<!-- JSONBIN RESTORE LIST -->
+<div class="jb-backdrop" id="jbRestoreBackdrop"></div>
+<div class="jb-modal" id="jbRestoreModal">
+  <div class="jb-card">
+    <div class="jb-title">Restaurer une sauvegarde</div>
+    <div class="jb-desc">Choisissez une sauvegarde à restaurer. Vos données actuelles seront remplacées.</div>
+    <div id="jbLoader" class="loader">Chargement depuis le Cloud...</div>
+    <div class="jb-list" id="jbRestoreList"></div>
+    <div class="jb-actions">
+      <button class="btn" id="jbRestoreCancel">Annuler</button>
     </div>
   </div>
 </div>
@@ -458,11 +463,11 @@
     const lbl=txt=>{const l=document.createElement('div');l.className='drawer-label';l.textContent=txt;drawerBody.appendChild(l);};
 
     /* Export / Import */
-        /* Google Drive Cloud Sync */
-    sec('☁️ Cloud Sync (Google Drive)');
-    btn('☁️ Sauvegarder en ligne','',()=>handleGoogleAction(uploadToDrive));
-    btn('☁️ Restaurer depuis le cloud','',()=>handleGoogleAction(openRestoreModal));
-    btn('⚙️ Configurer Google Client ID','',()=>{closeDrawer();openGDSetupModal();});
+        /* JSONBin Cloud Sync */
+    sec('☁️ Cloud Sync (JSONBin)');
+    btn('☁️ Sauvegarder en ligne','',()=>uploadToCloud());
+    btn('☁️ Restaurer depuis le cloud','',()=>openRestoreModal());
+    btn('⚙️ Configurer API JSONBin','',()=>{closeDrawer();openJBSetupModal();});
     divider();
 
 sec('Export / Import');
@@ -983,253 +988,220 @@ sec('Export / Import');
     html2pdf().set(opt).from(clonedReport).save();
   }
 
+/* ── CLOUD SYNC (JSONBIN.IO) ── */
+const JB_URL = 'https://api.jsonbin.io/v3/b/';
 
-
-/* ── GOOGLE DRIVE SYNC ── */
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-let tokenClient;
-let gapiInited = false;
-let accessToken = null;
-
-function getClientId(){ return localStorage.getItem('suiviSante.gdriveClientId'); }
-
-// Initie le client token immédiatement si le client ID existe
-function initGoogleClient() {
-  const cid = getClientId();
-  if(!cid || !window.google || !window.gapi) return;
-
-  // 1. Initialiser le Token Client (Identity Services)
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: cid,
-    scope: SCOPES,
-    callback: (response) => {
-      if (response.error !== undefined) {
-        console.error(response);
-        return alert("Erreur d'authentification Google: " + response.error);
-      }
-      accessToken = response.access_token;
-      if(window.pendingGoogleAction) {
-        window.pendingGoogleAction();
-        window.pendingGoogleAction = null;
-      }
-    },
-  });
-
-  // 2. Initialiser GAPI Client (Drive API)
-  gapi.load('client', async () => {
-    try {
-      await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
-      gapiInited = true;
-    } catch(err) {
-      console.error('Erreur init gapi.client:', err);
-    }
-  });
-}
-
-// Charger au démarrage si possible
-setTimeout(initGoogleClient, 1500);
-
-function handleGoogleAction(actionFunc) {
-  const cid = getClientId();
-  if(!cid) return openGDSetupModal();
-
-  if(!tokenClient || !gapiInited) {
-    alert("Initialisation de Google Drive en cours... Veuillez réessayer dans un instant.");
-    initGoogleClient();
-    return;
-  }
-
-  window.pendingGoogleAction = actionFunc;
-
-  // Déclencher le popup Oauth s'il n'y a pas de token
-  if (!accessToken) {
-    tokenClient.requestAccessToken({prompt: ''}); // Evite le blocage popup
-  } else {
-    actionFunc();
-  }
-}
-
-function openGDSetupModal() {
-  document.getElementById('gdClientIdInp').value = getClientId()||'';
-  document.getElementById('gdSetupBackdrop').classList.add('open');
-  document.getElementById('gdSetupModal').classList.add('open');
-
-  document.getElementById('gdSetupSave').onclick = () => {
-    const val = document.getElementById('gdClientIdInp').value.trim();
-    if(!val) return alert("Client ID requis");
-    localStorage.setItem('suiviSante.gdriveClientId', val);
-    document.getElementById('gdSetupBackdrop').classList.remove('open');
-    document.getElementById('gdSetupModal').classList.remove('open');
-    initGoogleClient();
+function getJBCreds() {
+  return {
+    key: localStorage.getItem('suiviSante.jbKey'),
+    bin: localStorage.getItem('suiviSante.jbBin')
   };
 }
 
-document.getElementById('gdSetupCancel').onclick = () => {
-  document.getElementById('gdSetupBackdrop').classList.remove('open');
-  document.getElementById('gdSetupModal').classList.remove('open');
+function openJBSetupModal() {
+  const creds = getJBCreds();
+  document.getElementById('jbApiKeyInp').value = creds.key || '';
+  document.getElementById('jbBinIdInp').value = creds.bin || '';
+  document.getElementById('jbSetupBackdrop').classList.add('open');
+  document.getElementById('jbSetupModal').classList.add('open');
+}
+
+function closeJBSetupModal() {
+  document.getElementById('jbSetupBackdrop').classList.remove('open');
+  document.getElementById('jbSetupModal').classList.remove('open');
+}
+
+document.getElementById('jbSetupCancel').onclick = closeJBSetupModal;
+document.getElementById('jbSetupBackdrop').onclick = closeJBSetupModal;
+document.getElementById('jbSetupSave').onclick = () => {
+  const k = document.getElementById('jbApiKeyInp').value.trim();
+  const b = document.getElementById('jbBinIdInp').value.trim();
+  if(!k || !b) return alert("Veuillez remplir les deux champs.");
+  localStorage.setItem('suiviSante.jbKey', k);
+  localStorage.setItem('suiviSante.jbBin', b);
+  closeJBSetupModal();
+  alert("Configuration sauvegardée ! Vous pouvez maintenant synchroniser.");
 };
 
+async function checkConfig() {
+  const creds = getJBCreds();
+  if(!creds.key || !creds.bin) {
+    closeDrawer();
+    openJBSetupModal();
+    return false;
+  }
+  return creds;
+}
+
+// Fonction utilitaire pour lire le Bin
+async function fetchBin(creds) {
+  const res = await fetch(JB_URL + creds.bin, {
+    method: 'GET',
+    headers: { 'X-Master-Key': creds.key }
+  });
+  if(!res.ok) throw new Error("Erreur HTTP " + res.status);
+  const data = await res.json();
+  return data.record;
+}
+
 /* -- SAUVEGARDE -- */
-async function uploadToDrive() {
+async function uploadToCloud() {
+  const creds = await checkConfig();
+  if(!creds) return;
+
   try {
-    if(!gapi.client.drive) throw new Error("L'API Google Drive n'est pas chargée.");
-
-    // Lister les fichiers existants
-    const listRes = await gapi.client.drive.files.list({
-      spaces: 'appDataFolder',
-      fields: 'files(id, name, createdTime)',
-      orderBy: 'createdTime desc'
-    });
-    const files = listRes.result.files || [];
-
-    // Garder seulement les 4 plus récents (pour faire de la place pour le 5ème)
-    if(files.length >= 5) {
-      for(let i = 4; i < files.length; i++) {
-        await gapi.client.drive.files.delete({fileId: files[i].id});
-      }
+    // 1. Récupérer l'état actuel du cloud
+    let cloudData = {};
+    try {
+      cloudData = await fetchBin(creds);
+    } catch(e) {
+      console.warn("Bin vide ou illisible, création d'un nouveau format.");
     }
 
-    const payload = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
+    // Le format cloud sera { backups: [ {timestamp, dateStr, data}, ... ] }
+    if(!cloudData || !Array.isArray(cloudData.backups)) {
+      cloudData = { backups: [] };
+    }
+
+    // 2. Construire le payload local
+    const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
     globalState.calDefs.forEach(d => {
-      payload.data[d.id] = {
+      localData.data[d.id] = {
         days: loadLS('suiviSante.days.'+d.id) || {},
         notes: loadLS('suiviSante.notes.'+d.id) || {},
         meds: loadLS('suiviSante.meds.'+d.id) || []
       };
     });
 
+    // 3. Ajouter la nouvelle sauvegarde au début du tableau
     const d = new Date();
-    const filename = `backup_v3_${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}.json`;
+    const newBackup = {
+      timestamp: Date.now(),
+      dateStr: d.toLocaleString('fr-FR'),
+      data: localData
+    };
 
-    // Envoi via fetch pour plus de robustesse sur les données texte JSON pures
-    const fileMetadata = { name: filename, parents: ['appDataFolder'] };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
-    form.append('file', new Blob([JSON.stringify(payload)], {type: 'application/json'}));
+    cloudData.backups.unshift(newBackup);
 
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-      body: form
-    });
-
-    if(!res.ok) {
-        // Fallback: 2-step process si multipart fetch échoue
-        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify(fileMetadata)
-        });
-        if(!createRes.ok) throw new Error("Erreur création metadata.");
-        const fileInfo = await createRes.json();
-
-        const updateRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`, {
-          method: 'PATCH',
-          headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if(!updateRes.ok) throw new Error("Erreur upload contenu.");
+    // 4. Ne garder que les 5 plus récents
+    if(cloudData.backups.length > 5) {
+      cloudData.backups = cloudData.backups.slice(0, 5);
     }
 
+    // 5. Envoyer au cloud (PUT pour écraser le Bin avec le nouveau tableau)
+    const res = await fetch(JB_URL + creds.bin, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': creds.key
+      },
+      body: JSON.stringify(cloudData)
+    });
+
+    if(!res.ok) throw new Error("Erreur PUT HTTP " + res.status);
+
     alert('✅ Sauvegarde Cloud réussie !');
+
   } catch(e) {
-    console.error("Upload Error:", e);
-    alert('Erreur de sauvegarde: ' + (e.message || 'Problème inattendu'));
+    console.error(e);
+    alert("Erreur lors de la sauvegarde: Vérifiez votre Clé API et votre Bin ID.");
   }
 }
 
 /* -- RESTAURATION -- */
-function openRestoreModal() {
-  if(!gapi.client.drive) {
-     return alert("L'API Google Drive n'est pas chargée. Veuillez patienter.");
-  }
+function closeRestoreModal() {
+  document.getElementById('jbRestoreBackdrop').classList.remove('open');
+  document.getElementById('jbRestoreModal').classList.remove('open');
+}
+document.getElementById('jbRestoreCancel').onclick = closeRestoreModal;
+document.getElementById('jbRestoreBackdrop').onclick = closeRestoreModal;
 
-  document.getElementById('gdRestoreList').innerHTML = '';
-  document.getElementById('gdLoader').style.display='block';
-  document.getElementById('gdRestoreBackdrop').classList.add('open');
-  document.getElementById('gdRestoreModal').classList.add('open');
+async function openRestoreModal() {
+  const creds = await checkConfig();
+  if(!creds) return;
 
-  gapi.client.drive.files.list({
-    spaces: 'appDataFolder',
-    fields: 'files(id, name, createdTime, size)',
-    orderBy: 'createdTime desc'
-  }).then(res => {
-    document.getElementById('gdLoader').style.display='none';
-    const files = res.result.files;
-    const list = document.getElementById('gdRestoreList');
-    if(!files || files.length === 0) {
-      list.innerHTML = '<div style="padding:10px;text-align:center;color:#666;">Aucune sauvegarde trouvée.</div>';
+  document.getElementById('jbRestoreList').innerHTML = '';
+  document.getElementById('jbLoader').style.display='block';
+  document.getElementById('jbRestoreBackdrop').classList.add('open');
+  document.getElementById('jbRestoreModal').classList.add('open');
+
+  try {
+    const cloudData = await fetchBin(creds);
+    document.getElementById('jbLoader').style.display='none';
+
+    const list = document.getElementById('jbRestoreList');
+    if(!cloudData || !cloudData.backups || cloudData.backups.length === 0) {
+      list.innerHTML = '<div style="padding:10px;text-align:center;color:#666;">Aucune sauvegarde trouvée dans ce Bin.</div>';
       return;
     }
 
-    files.forEach(f => {
-      const d = new Date(f.createdTime);
+    cloudData.backups.forEach((bkp, index) => {
       const btn = document.createElement('button');
-      btn.className = 'gd-item';
-      btn.innerHTML = `<div class="gd-item-date">${d.toLocaleString('fr-FR')}</div><div class="gd-item-size">${(f.size/1024).toFixed(1)} KB</div>`;
-      btn.onclick = () => performRestore(f.id, d.toLocaleString('fr-FR'));
+      btn.className = 'jb-item';
+
+      const isLatest = index === 0 ? '<span style="color:var(--green);font-size:11px;">(Dernière)</span>' : '';
+      btn.innerHTML = `
+        <div>
+          <div class="jb-item-date">${bkp.dateStr} ${isLatest}</div>
+          <div class="jb-item-devices">${bkp.data.calendars ? bkp.data.calendars.length : 0} calendrier(s)</div>
+        </div>
+        <div style="font-size:20px;">⬇️</div>
+      `;
+      btn.onclick = () => performRestore(bkp);
       list.appendChild(btn);
     });
-  }).catch(e => {
-    console.error("Restore List Error:", e);
-    document.getElementById('gdLoader').style.display='none';
-    alert("Erreur liste fichiers: " + (e.message || e.error?.message || "inconnue"));
-  });
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('jbLoader').style.display='none';
+    alert("Erreur de lecture du Cloud. Vérifiez votre Clé API et Bin ID.");
+  }
 }
 
-document.getElementById('gdRestoreCancel').onclick = () => {
-  document.getElementById('gdRestoreBackdrop').classList.remove('open');
-  document.getElementById('gdRestoreModal').classList.remove('open');
-};
-
-async function performRestore(fileId, dateStr) {
+async function performRestore(bkp) {
   try {
-    document.getElementById('gdLoader').style.display='block';
-    const res = await gapi.client.drive.files.get({fileId: fileId, alt: 'media'});
-    document.getElementById('gdLoader').style.display='none';
-
-    const cloudData = res.result;
-    if(!cloudData || !cloudData.calendars) throw new Error("Fichier invalide");
-
+    const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
     const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
-    const cloudMod = parseInt(cloudData.lastModified||'0', 10);
 
-    let msg = `Voulez-vous vraiment écraser vos données locales actuelles par la sauvegarde du ${dateStr} ?`;
+    let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du ${bkp.dateStr} ?`;
     if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
-      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications récentes seront perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
+      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications locales seront perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
     }
 
     const ok = await showConfirm('Restaurer', msg);
     if(!ok) return;
 
-    // Backup de secours local
+    // Backup de secours
     const bkpBlob = new Blob([localStorage.getItem('suiviSante.lastModified') ? JSON.stringify(localStorage) : ''], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(bkpBlob);
     a.download = 'backup_secours_avant_restauration.json';
     a.click();
 
-    // Effacer et appliquer
+    // Appliquer les données
     localStorage.clear();
-    persist(CALS_META_KEY, cloudData.calendars);
-    cloudData.calendars.forEach(def => {
-      const d = cloudData.data && cloudData.data[def.id];
-      if(d) {
-        persist('suiviSante.days.'+def.id, d.days||{});
-        persist('suiviSante.notes.'+def.id, d.notes||{});
-        persist('suiviSante.meds.'+def.id, d.meds||[]);
+    const dta = bkp.data;
+    persist(CALS_META_KEY, dta.calendars);
+    dta.calendars.forEach(def => {
+      const calData = dta.data && dta.data[def.id];
+      if(calData) {
+        persist('suiviSante.days.'+def.id, calData.days||{});
+        persist('suiviSante.notes.'+def.id, calData.notes||{});
+        persist('suiviSante.meds.'+def.id, calData.meds||[]);
       }
       if(def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
     });
-    localStorage.setItem('suiviSante.lastModified', cloudData.lastModified||Date.now());
+    localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
+
+    // Garder les identifiants JSONBin
+    localStorage.setItem('suiviSante.jbKey', getJBCreds().key);
+    localStorage.setItem('suiviSante.jbBin', getJBCreds().bin);
 
     alert("Restauration réussie !");
     location.reload();
   } catch(e) {
     console.error(e);
-    alert("Erreur lors de la restauration. " + (e.message||''));
-    document.getElementById('gdLoader').style.display='none';
+    alert("Erreur lors de l'application de la restauration.");
   }
 }
 
@@ -1268,6 +1240,5 @@ function closeReport(){
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 </body>
 </html>
