@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.04</title>
+<title>Mes Calendriers Santé v4.04b</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -251,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.04</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.04b</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -287,10 +287,6 @@
   <div class="confirm-card">
     <div class="confirm-title" id="confirmTitle">Confirmation</div>
     <div class="confirm-msg"   id="confirmMsg"></div>
-    <div style="display:none;align-items:center;gap:8px;margin-top:10px;" id="confirmCheckRow">
-      <input type="checkbox" id="confirmCheckbox" style="width:18px;height:18px;cursor:pointer;">
-      <label for="confirmCheckbox" id="confirmCheckLabel" style="font-size:13px;color:var(--muted);cursor:pointer;"></label>
-    </div>
     <div class="confirm-actions">
       <button class="btn" id="confirmCancelBtn">Annuler</button>
       <button class="btn btn-danger" id="confirmOkBtn">Confirmer</button>
@@ -573,18 +569,9 @@ sec('Export / Import');
     /* Danger */
     sec('Zone dangereuse');
     btn('Réinitialiser TOUS les calendriers','danger',async()=>{
-      const ok=await showConfirm('Réinitialiser tout','Effacer le contenu de tous les calendriers ?');if(!ok)return;
+      const ok=await showConfirm('Réinitialiser tout','Effacer toutes les données de tous les calendriers ?');if(!ok)return;
       globalState.calDefs.forEach(d=>{localStorage.removeItem('suiviSante.days.'+d.id);localStorage.removeItem('suiviSante.notes.'+d.id);});
       globalState.calendars.forEach(cal=>{cal.data={};cal.notes={};cal.renderCalendar();cal.updateSince();cal.renderMonthNotes();});closeDrawer();
-    });
-    btn('⚠️ Faire un RaZ complet','danger',async()=>{
-      const ok=await showConfirm('Remise à Zéro','Supprimer TOUT et revenir à zéro (sauf la configuration Cloud JSONBin) ?');
-      if(!ok)return;
-      const creds = getJBCreds();
-      localStorage.clear();
-      if(creds.key) localStorage.setItem('suiviSante.jbKey', creds.key);
-      if(creds.bin) localStorage.setItem('suiviSante.jbBin', creds.bin);
-      location.reload();
     });
   }
 
@@ -1175,7 +1162,6 @@ async function performRestore(bkp) {
   try {
     closeRestoreModal();
 
-    // Attendre 300ms que la modale de restauration se ferme proprement
     await new Promise(r => setTimeout(r, 300));
 
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
@@ -1186,13 +1172,11 @@ async function performRestore(bkp) {
       msg = `<span style="color:var(--red);font-weight:bold;">🚨 ATTENTION DANGER 🚨</span><br><br>Vos données locales actuelles sont <b>PLUS RÉCENTES</b> que cette sauvegarde Cloud.<br>Si vous continuez, vos modifications locales récentes seront définitivement perdues.<br><br>Voulez-vous quand même forcer la restauration ?`;
     }
 
-    // 1er Popup: Confirmation de l'écrasement
     const ok = await showConfirm('Restaurer', msg);
     if(!ok) return;
 
-    // 2ème Popup: Demande de sauvegarde de secours (Oui/Non)
-    await new Promise(r => setTimeout(r, 200)); // Laisser l'ancien popup disparaitre
-    const wantBackup = await showConfirmYesNo('Sauvegarde de secours', 'Voulez-vous faire une sauvegarde de votre configuration actuelle avant de l'écraser ?');
+    await new Promise(r => setTimeout(r, 200));
+    const wantBackup = await showConfirmYesNo('Sauvegarde de secours', 'Voulez-vous faire une sauvegarde de votre configuration locale actuelle avant de la remplacer par celle du cloud ?');
 
     const creds = getJBCreds();
 
@@ -1214,7 +1198,6 @@ async function performRestore(bkp) {
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
     }
 
-    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT DE SE LANCER
     setTimeout(() => {
         localStorage.clear();
         const dta = bkp.data;
