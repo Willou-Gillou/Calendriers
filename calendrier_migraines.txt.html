@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.03</title>
+<title>Mes Calendriers Santé v4.04</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -251,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.03</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.04</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1175,26 +1175,28 @@ async function performRestore(bkp) {
   try {
     closeRestoreModal();
 
+    // Attendre 300ms que la modale de restauration se ferme proprement
+    await new Promise(r => setTimeout(r, 300));
+
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
     const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
 
-    let isDanger = (localMod > cloudMod && localMod > 0 && cloudMod > 0);
-
     let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du <b>${bkp.dateStr}</b> ?`;
-    if(isDanger) {
+    if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
       msg = `<span style="color:var(--red);font-weight:bold;">🚨 ATTENTION DANGER 🚨</span><br><br>Vos données locales actuelles sont <b>PLUS RÉCENTES</b> que cette sauvegarde Cloud.<br>Si vous continuez, vos modifications locales récentes seront définitivement perdues.<br><br>Voulez-vous quand même forcer la restauration ?`;
     }
 
-    const result = await showConfirm('Restaurer', msg, {
-      label: 'Faire une sauvegarde locale avant changement',
-      checked: isDanger
-    });
+    // 1er Popup: Confirmation de l'écrasement
+    const ok = await showConfirm('Restaurer', msg);
+    if(!ok) return;
 
-    if(!result || !result.ok) return;
+    // 2ème Popup: Demande de sauvegarde de secours (Oui/Non)
+    await new Promise(r => setTimeout(r, 200)); // Laisser l'ancien popup disparaitre
+    const wantBackup = await showConfirmYesNo('Sauvegarde de secours', 'Voulez-vous faire une sauvegarde de votre configuration actuelle avant de l'écraser ?');
 
     const creds = getJBCreds();
 
-    if(result.checked) {
+    if(wantBackup) {
       const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
       globalState.calDefs.forEach(d => {
         localData.data[d.id] = {
@@ -1212,6 +1214,7 @@ async function performRestore(bkp) {
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
     }
 
+    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT DE SE LANCER
     setTimeout(() => {
         localStorage.clear();
         const dta = bkp.data;
@@ -1233,7 +1236,7 @@ async function performRestore(bkp) {
 
         alert("Restauration réussie !");
         window.location.href = window.location.pathname + '?t=' + Date.now();
-    }, result.checked ? 500 : 50);
+    }, wantBackup ? 500 : 50);
 
   } catch(e) {
     console.error(e);
