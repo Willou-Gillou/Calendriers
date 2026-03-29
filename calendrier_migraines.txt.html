@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.01</title>
+<title>Mes Calendriers Santé v4.02</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -251,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.01</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.02</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1160,7 +1160,6 @@ async function openRestoreModal() {
 
 async function performRestore(bkp) {
   try {
-    // Problème 3: Cacher immédiatement la liste de restauration pour voir le popup de confirmation
     closeRestoreModal();
 
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
@@ -1174,10 +1173,9 @@ async function performRestore(bkp) {
     const ok = await showConfirm('Restaurer', msg);
     if(!ok) return;
 
-    // Sauvegarder en mémoire RAM les identifiants JSONBin AVANT de vider le localStorage (Problème 1)
     const creds = getJBCreds();
 
-    // Problème 2: Le backup de secours doit construire un vrai objet JSON avec toutes les données de l'app
+    // BACKUP DE SECOURS FIABLE SUR MAC/SAFARI
     const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
     globalState.calDefs.forEach(d => {
       localData.data[d.id] = {
@@ -1190,30 +1188,36 @@ async function performRestore(bkp) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(bkpBlob);
     a.download = 'backup_secours_avant_restauration.json';
+    document.body.appendChild(a); // Nécessaire pour Safari
     a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
 
-    // Vider et Appliquer les données du Cloud
-    localStorage.clear();
-    const dta = bkp.data;
+    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT DE SE LANCER AVANT DE RELOAD
+    setTimeout(() => {
+        // Vider et Appliquer les données du Cloud
+        localStorage.clear();
+        const dta = bkp.data;
 
-    // Réinjecter d'abord la configuration API JSONBin (pour être sûr à 100% qu'elle est gardée)
-    if(creds.key) localStorage.setItem('suiviSante.jbKey', creds.key);
-    if(creds.bin) localStorage.setItem('suiviSante.jbBin', creds.bin);
+        if(creds.key) localStorage.setItem('suiviSante.jbKey', creds.key);
+        if(creds.bin) localStorage.setItem('suiviSante.jbBin', creds.bin);
 
-    persist(CALS_META_KEY, dta.calendars);
-    dta.calendars.forEach(def => {
-      const calData = dta.data && dta.data[def.id];
-      if(calData) {
-        persist('suiviSante.days.'+def.id, calData.days||{});
-        persist('suiviSante.notes.'+def.id, calData.notes||{});
-        persist('suiviSante.meds.'+def.id, calData.meds||[]);
-      }
-      if(def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
-    });
-    localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
+        persist(CALS_META_KEY, dta.calendars);
+        dta.calendars.forEach(def => {
+          const calData = dta.data && dta.data[def.id];
+          if(calData) {
+            persist('suiviSante.days.'+def.id, calData.days||{});
+            persist('suiviSante.notes.'+def.id, calData.notes||{});
+            persist('suiviSante.meds.'+def.id, calData.meds||[]);
+          }
+          if(def.title) localStorage.setItem('suiviSante.title.'+def.id, def.title);
+        });
+        localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
 
-    alert("Restauration réussie ! L'application va se recharger.");
-    location.reload();
+        alert("Restauration réussie !");
+        // RAFRAICHISSEMENT AGRESSIF POUR IPHONE
+        window.location.href = window.location.pathname + '?t=' + Date.now();
+    }, 500);
+
   } catch(e) {
     console.error(e);
     alert("Erreur lors de l'application de la restauration.");
