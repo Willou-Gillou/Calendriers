@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.00</title>
+<title>Mes Calendriers Santé v4.01</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -251,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.00</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.01</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1160,27 +1160,46 @@ async function openRestoreModal() {
 
 async function performRestore(bkp) {
   try {
+    // Problème 3: Cacher immédiatement la liste de restauration pour voir le popup de confirmation
+    closeRestoreModal();
+
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
     const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
 
     let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du ${bkp.dateStr} ?`;
     if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
-      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications locales seront perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
+      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales actuelles sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications locales récentes seront définitivement perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
     }
 
     const ok = await showConfirm('Restaurer', msg);
     if(!ok) return;
 
-    // Backup de secours
-    const bkpBlob = new Blob([localStorage.getItem('suiviSante.lastModified') ? JSON.stringify(localStorage) : ''], {type:'application/json'});
+    // Sauvegarder en mémoire RAM les identifiants JSONBin AVANT de vider le localStorage (Problème 1)
+    const creds = getJBCreds();
+
+    // Problème 2: Le backup de secours doit construire un vrai objet JSON avec toutes les données de l'app
+    const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
+    globalState.calDefs.forEach(d => {
+      localData.data[d.id] = {
+        days: loadLS('suiviSante.days.'+d.id) || {},
+        notes: loadLS('suiviSante.notes.'+d.id) || {},
+        meds: loadLS('suiviSante.meds.'+d.id) || []
+      };
+    });
+    const bkpBlob = new Blob([JSON.stringify(localData)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(bkpBlob);
     a.download = 'backup_secours_avant_restauration.json';
     a.click();
 
-    // Appliquer les données
+    // Vider et Appliquer les données du Cloud
     localStorage.clear();
     const dta = bkp.data;
+
+    // Réinjecter d'abord la configuration API JSONBin (pour être sûr à 100% qu'elle est gardée)
+    if(creds.key) localStorage.setItem('suiviSante.jbKey', creds.key);
+    if(creds.bin) localStorage.setItem('suiviSante.jbBin', creds.bin);
+
     persist(CALS_META_KEY, dta.calendars);
     dta.calendars.forEach(def => {
       const calData = dta.data && dta.data[def.id];
@@ -1193,11 +1212,7 @@ async function performRestore(bkp) {
     });
     localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
 
-    // Garder les identifiants JSONBin
-    localStorage.setItem('suiviSante.jbKey', getJBCreds().key);
-    localStorage.setItem('suiviSante.jbBin', getJBCreds().bin);
-
-    alert("Restauration réussie !");
+    alert("Restauration réussie ! L'application va se recharger.");
     location.reload();
   } catch(e) {
     console.error(e);
