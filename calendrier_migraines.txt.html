@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.02</title>
+<title>Mes Calendriers Santé v4.03</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -229,6 +229,18 @@
 .jb-item-devices{font-size:12px;color:var(--muted);margin-top:4px;}
 .jb-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
 .loader{display:none;font-size:14px;color:var(--accent);text-align:center;font-weight:bold;padding:10px 0;}
+
+/* CUSTOM CONFIRM MODAL */
+.confirm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;}
+.confirm-backdrop.open{display:block;}
+.confirm-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:105;padding:16px;}
+.confirm-modal.open{display:flex;}
+.confirm-card{width:min(94vw,400px);background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.22);padding:22px;display:flex;flex-direction:column;gap:14px;}
+.confirm-title{font-weight:bold;font-size:18px;}
+.confirm-msg{font-size:14px;color:var(--text);line-height:1.5;}
+.confirm-checkbox-row{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.confirm-checkbox-row input{width:18px;height:18px;cursor:pointer;}
+.confirm-checkbox-row label{font-size:13px;color:var(--muted);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -251,7 +263,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.02</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.03</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1165,39 +1177,47 @@ async function performRestore(bkp) {
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
     const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
 
-    let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du ${bkp.dateStr} ?`;
-    if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
-      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales actuelles sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications locales récentes seront définitivement perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
+    let isDanger = (localMod > cloudMod && localMod > 0 && cloudMod > 0);
+
+    let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du <b>${bkp.dateStr}</b> ?`;
+    if(isDanger) {
+      msg = `<span style="color:var(--red);font-weight:bold;">🚨 ATTENTION DANGER 🚨</span><br><br>Vos données locales actuelles sont <b>PLUS RÉCENTES</b> que cette sauvegarde Cloud.<br>Si vous continuez, vos modifications locales récentes seront définitivement perdues.<br><br>Voulez-vous quand même forcer la restauration ?`;
     }
 
-    const ok = await showConfirm('Restaurer', msg);
-    if(!ok) return;
+    const result = await showConfirm('Restaurer', msg, {
+      label: 'Faire une sauvegarde locale avant changement',
+      checked: isDanger // Cochée si danger, décochée sinon
+    });
+
+    if(!result || !result.ok) return;
 
     const creds = getJBCreds();
 
-    // BACKUP DE SECOURS FIABLE SUR MAC/SAFARI
-    const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
-    globalState.calDefs.forEach(d => {
-      localData.data[d.id] = {
-        days: loadLS('suiviSante.days.'+d.id) || {},
-        notes: loadLS('suiviSante.notes.'+d.id) || {},
-        meds: loadLS('suiviSante.meds.'+d.id) || []
-      };
-    });
-    const bkpBlob = new Blob([JSON.stringify(localData)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(bkpBlob);
-    a.download = 'backup_secours_avant_restauration.json';
-    document.body.appendChild(a); // Nécessaire pour Safari
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+    // Si la case a été cochée, on fait la sauvegarde locale de secours
+    if(result.checked) {
+      const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
+      globalState.calDefs.forEach(d => {
+        localData.data[d.id] = {
+          days: loadLS('suiviSante.days.'+d.id) || {},
+          notes: loadLS('suiviSante.notes.'+d.id) || {},
+          meds: loadLS('suiviSante.meds.'+d.id) || []
+        };
+      });
+      const bkpBlob = new Blob([JSON.stringify(localData)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(bkpBlob);
+      a.download = 'backup_secours_avant_restauration.json';
+      document.body.appendChild(a); 
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+    }
 
-    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT DE SE LANCER AVANT DE RELOAD
+    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT EVENTUEL DE SE LANCER AVANT DE RELOAD
     setTimeout(() => {
-        // Vider et Appliquer les données du Cloud
         localStorage.clear();
         const dta = bkp.data;
 
+        // Réinjection des creds
         if(creds.key) localStorage.setItem('suiviSante.jbKey', creds.key);
         if(creds.bin) localStorage.setItem('suiviSante.jbBin', creds.bin);
 
@@ -1214,7 +1234,6 @@ async function performRestore(bkp) {
         localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
 
         alert("Restauration réussie !");
-        // RAFRAICHISSEMENT AGRESSIF POUR IPHONE
         window.location.href = window.location.pathname + '?t=' + Date.now();
     }, 500);
 
@@ -1259,5 +1278,23 @@ function closeReport(){
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- CUSTOM CONFIRM -->
+<div class="confirm-backdrop" id="confirmBackdrop"></div>
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-card">
+    <div class="confirm-title" id="confirmTitle">Confirmation</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-checkbox-row" id="confirmCheckRow" style="display:none;">
+      <input type="checkbox" id="confirmCheckbox">
+      <label for="confirmCheckbox" id="confirmCheckLabel"></label>
+    </div>
+    <div class="gd-actions">
+      <button class="btn" id="confirmCancel">Annuler</button>
+      <button class="btn btn-primary" id="confirmOk">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
