@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mes Calendriers Santé v4.04b</title>
+<title>Mes Calendriers Santé v4.02</title>
 <style>
   :root {
     --bg:#f4f6fa;--text:#222;--muted:#666;--accent:#007bff;
@@ -251,7 +251,7 @@
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
   <div class="drawer-header">
-    <span class="drawer-header-title">Mes Calendriers Santé v4.04b</span>
+    <span class="drawer-header-title">Mes Calendriers Santé v4.02</span>
     <button class="drawer-close-btn" id="drawerCloseBtn">&#10005;</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
@@ -1162,43 +1162,39 @@ async function performRestore(bkp) {
   try {
     closeRestoreModal();
 
-    await new Promise(r => setTimeout(r, 300));
-
     const cloudMod = parseInt(bkp.data.lastModified||'0', 10);
     const localMod = parseInt(localStorage.getItem('suiviSante.lastModified')||'0', 10);
 
-    let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du <b>${bkp.dateStr}</b> ?`;
+    let msg = `Voulez-vous vraiment écraser vos données locales par la sauvegarde du ${bkp.dateStr} ?`;
     if(localMod > cloudMod && localMod > 0 && cloudMod > 0) {
-      msg = `<span style="color:var(--red);font-weight:bold;">🚨 ATTENTION DANGER 🚨</span><br><br>Vos données locales actuelles sont <b>PLUS RÉCENTES</b> que cette sauvegarde Cloud.<br>Si vous continuez, vos modifications locales récentes seront définitivement perdues.<br><br>Voulez-vous quand même forcer la restauration ?`;
+      msg = `🚨 ATTENTION DANGER 🚨\n\nVos données locales actuelles sont PLUS RÉCENTES que cette sauvegarde Cloud.\nSi vous continuez, vos modifications locales récentes seront définitivement perdues.\n\nVoulez-vous quand même forcer la restauration ?`;
     }
 
     const ok = await showConfirm('Restaurer', msg);
     if(!ok) return;
 
-    await new Promise(r => setTimeout(r, 200));
-    const wantBackup = await showConfirmYesNo('Sauvegarde de secours', 'Voulez-vous faire une sauvegarde de votre configuration locale actuelle avant de la remplacer par celle du cloud ?');
-
     const creds = getJBCreds();
 
-    if(wantBackup) {
-      const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
-      globalState.calDefs.forEach(d => {
-        localData.data[d.id] = {
-          days: loadLS('suiviSante.days.'+d.id) || {},
-          notes: loadLS('suiviSante.notes.'+d.id) || {},
-          meds: loadLS('suiviSante.meds.'+d.id) || []
-        };
-      });
-      const bkpBlob = new Blob([JSON.stringify(localData)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(bkpBlob);
-      a.download = 'backup_secours_avant_restauration.json';
-      document.body.appendChild(a); 
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
-    }
+    // BACKUP DE SECOURS FIABLE SUR MAC/SAFARI
+    const localData = { calendars: globalState.calDefs, data: {}, lastModified: localStorage.getItem('suiviSante.lastModified')||Date.now() };
+    globalState.calDefs.forEach(d => {
+      localData.data[d.id] = {
+        days: loadLS('suiviSante.days.'+d.id) || {},
+        notes: loadLS('suiviSante.notes.'+d.id) || {},
+        meds: loadLS('suiviSante.meds.'+d.id) || []
+      };
+    });
+    const bkpBlob = new Blob([JSON.stringify(localData)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(bkpBlob);
+    a.download = 'backup_secours_avant_restauration.json';
+    document.body.appendChild(a); // Nécessaire pour Safari
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
 
+    // LAISSER LE TEMPS AU TÉLÉCHARGEMENT DE SE LANCER AVANT DE RELOAD
     setTimeout(() => {
+        // Vider et Appliquer les données du Cloud
         localStorage.clear();
         const dta = bkp.data;
 
@@ -1218,8 +1214,9 @@ async function performRestore(bkp) {
         localStorage.setItem('suiviSante.lastModified', dta.lastModified||Date.now());
 
         alert("Restauration réussie !");
+        // RAFRAICHISSEMENT AGRESSIF POUR IPHONE
         window.location.href = window.location.pathname + '?t=' + Date.now();
-    }, wantBackup ? 500 : 50);
+    }, 500);
 
   } catch(e) {
     console.error(e);
